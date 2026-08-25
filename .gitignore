@@ -1,0 +1,21 @@
+# Local build inputs and caches — never published.
+# The board inlines every stat at build time, so nothing here is served at runtime.
+data/
+.venv/
+__pycache__/
+*.pyc
+*.bak*
+*.xlsx
+*.xls
+preview/
+
+# Source tables consumed by build_depthcharts.py, not published assets
+coaches*.csv
+names_ko.csv
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~

@@ -1,0 +1,20 @@
+# Referenced by the board but NOT present in photos/
+# Generated from depthchart.html + stats.js + games.js
+# Referenced set = explicit img filenames in the embedded board data
+#   + logo_{TEAM}.png built dynamically for all 32 teams (plus ESPN2NFL: LAR->LA, WSH->WAS)
+#
+# Impact: the card falls back to a jersey-number ghost via the img onerror handler.
+# count: 12
+
+ARI_20_Knight.png
+ATL_25_Allgeier.png
+BAL_5_Huntley.png
+GB_23_Wilson.png
+HOU_21_Chubb.png
+LA_22_Corum.png
+MIA_31_Gordon.png
+NYG_26_Singletary.png
+NYJ_2_Taylor.png
+NYJ_7_Fields.png
+PIT_14_Gainwell.png
+TB_44_Tucker.png

@@ -1,0 +1,14 @@
+# Present in photos/ but never referenced by the board
+# Generated from depthchart.html + stats.js + games.js
+# Referenced set = explicit img filenames in the embedded board data
+#   + logo_{TEAM}.png built dynamically for all 32 teams (plus ESPN2NFL: LAR->LA, WSH->WAS)
+#
+# Not deleted. Likely players who changed team or left the roster between builds.
+# count: 6
+
+BAL_93_Campbell.png
+IND_50_Boettcher.png
+MIA_9_Uche.png
+TEN_11_Johnson.png
+TEN_73_Volson.png
+WAS_45_Chaisson.png
