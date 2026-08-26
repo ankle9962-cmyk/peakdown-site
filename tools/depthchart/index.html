@@ -484,9 +484,6 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
 /* 지금 자리는 팀 강조색으로 한 줄 띄웁니다 — 표를 위에서부터 읽어 내려오다
    마지막에 보드가 보여 주는 그 자리에 닿게 하려는 표시입니다. */
 .pnl table.career tr.now .tm,.pnl table.career tr.now .yr{color:var(--team-a)}
-.pnl .wlink{display:inline-block;margin-top:16px;font-size:16px;font-weight:700;
- color:var(--team-a);text-decoration:none;border-bottom:1px solid var(--team-a)}
-.pnl .wlink:hover{color:var(--ink);border-bottom-color:var(--ink)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
 
@@ -1024,38 +1021,9 @@ function openZone(t,key){
   pnl.querySelector(".x").focus();
 }
 // ── 코치 경력 패널 ────────────────────────────────────────────────────────
-// NFL 팀만 한글로 옮깁니다. 대학·고교·CFL·UFL 은 영문 그대로 둡니다 —
-// 표에 그런 이름이 대학만 200개 넘게 나오는데, 옮길 근거가 없는 이름을
-// 억지로 옮기면 틀린 이름이 늘어날 뿐입니다. 키는 위키백과가 쓰는 표기
-// 그대로라, 여기 없는 이름은 손대지 않고 지나갑니다(연고지 이전 이름 포함).
-const NFLKO={
- "Arizona Cardinals":"애리조나 카디널스","Atlanta Falcons":"애틀랜타 팰컨스",
- "Baltimore Ravens":"볼티모어 레이븐스","Buffalo Bills":"버펄로 빌스",
- "Carolina Panthers":"캐롤라이나 팬서스","Chicago Bears":"시카고 베어스",
- "Cincinnati Bengals":"신시내티 벵골스","Cleveland Browns":"클리블랜드 브라운스",
- "Dallas Cowboys":"댈러스 카우보이스","Denver Broncos":"덴버 브롱코스",
- "Detroit Lions":"디트로이트 라이언스","Green Bay Packers":"그린베이 패커스",
- "Houston Texans":"휴스턴 텍산스","Indianapolis Colts":"인디애나폴리스 콜츠",
- "Jacksonville Jaguars":"잭슨빌 재규어스","Kansas City Chiefs":"캔자스시티 치프스",
- "Las Vegas Raiders":"라스베이거스 레이더스","Los Angeles Chargers":"로스앤젤레스 차저스",
- "Los Angeles Rams":"로스앤젤레스 램스","Miami Dolphins":"마이애미 돌핀스",
- "Minnesota Vikings":"미네소타 바이킹스","New England Patriots":"뉴잉글랜드 패트리어츠",
- "New Orleans Saints":"뉴올리언스 세인츠","New York Giants":"뉴욕 자이언츠",
- "New York Jets":"뉴욕 제츠","Philadelphia Eagles":"필라델피아 이글스",
- "Pittsburgh Steelers":"피츠버그 스틸러스","San Francisco 49ers":"샌프란시스코 포티나이너스",
- "Seattle Seahawks":"시애틀 시호크스","Tampa Bay Buccaneers":"탬파베이 버커니어스",
- "Tennessee Titans":"테네시 타이탄스","Washington Commanders":"워싱턴 커맨더스",
- // 연고지·팀명이 바뀌기 전 이름. 경력표에는 그 시절 이름으로 적혀 있습니다.
- "Washington Redskins":"워싱턴 레드스킨스","Washington Football Team":"워싱턴 풋볼팀",
- "Oakland Raiders":"오클랜드 레이더스","San Diego Chargers":"샌디에이고 차저스",
- "St. Louis Rams":"세인트루이스 램스","Houston Oilers":"휴스턴 오일러스",
- "Tennessee Oilers":"테네시 오일러스","Phoenix Cardinals":"피닉스 카디널스",
- "St. Louis Cardinals":"세인트루이스 카디널스","Baltimore Colts":"볼티모어 콜츠",
- // 재임 중 연고지가 옮겨간 경우 위키백과가 두 이름을 슬래시로 붙여 씁니다.
- "San Diego / Los Angeles Chargers":"샌디에이고 / 로스앤젤레스 차저스",
- "Oakland / Las Vegas Raiders":"오클랜드 / 라스베이거스 레이더스",
- "St. Louis / Los Angeles Rams":"세인트루이스 / 로스앤젤레스 램스"};
-const koTeam=t=>NFLKO[String(t||"").trim()]||t;
+// 팀 이름은 위키백과가 준 영문 그대로 씁니다 — NFL 도, 대학·고교·CFL 도.
+// 카드의 역할 라벨(감독·공격 코디네이터…)만 한글입니다. 그건 위키백과
+// 자료가 아니라 보드가 쓰는 UI 글자라서입니다.
 const COACHLB={hc:"감독",oc:"공격 코디네이터",dc:"수비 코디네이터"};
 
 function openCoach(team,role){
@@ -1070,19 +1038,19 @@ function openCoach(team,role){
         this.parentNode.insertAdjacentHTML('afterbegin',
         '<span class=&quot;cini&quot;>${esc(initials(nm))}</span>')">`
     : `<span class="cini">${esc(initials(nm))}</span>`;
-  const now=koTeam(m.name||team);
+  const now=m.name||team;
   const car=rec.career||[];
   // 문서에 적힌 순서 그대로입니다 — 인포박스 코칭 이력이 이미 시간순입니다.
   const rows=car.map(r=>{
-    const tm=koTeam(r.team)||"—";
-    // 지금 이 팀·이 자리에 해당하는 마지막 줄만 표시색을 줍니다.
+    const tm=r.team||"—";
+    // 지금 보고 있는 팀에서 아직 재직 중인 줄에만 표시색을 줍니다. 자리(역할)는
+    // 보지 않습니다 — 문서의 역할 표기가 보드의 HC/OC/DC 와 늘 같지는 않습니다.
+    // 양쪽 다 영문이라 그대로 맞대 봅니다: 보드가 쓰는 nflverse 팀 이름 32개가
+    // 위키백과 표기와 글자까지 같아서 대응표가 필요 없습니다.
     const cur=/present/i.test(r.years||"")&&tm===now;
     return `<tr class="${cur?"now":""}"><th class="yr">${esc(r.years||"—")}</th>
       <td class="tm">${esc(tm)}</td><td class="rl">${esc(r.role||"—")}</td></tr>`;
   }).join("");
-  const link=rec.url
-    ? `<a class="wlink" href="${esc(rec.url)}" target="_blank"
-         rel="noopener noreferrer">Wikipedia에서 보기</a>` : "";
   pnl.innerHTML=`<button class="x" aria-label="닫기">&times;</button>
     <div class="pf">
       <div class="pshot cshot">${shot}</div>
@@ -1096,13 +1064,7 @@ function openCoach(team,role){
     ${rows?`<table class="career"><thead><tr><th class="yr">연도</th>
         <th class="tm">팀</th><th class="rl">역할</th></tr></thead>
         <tbody>${rows}</tbody></table>`
-      :`<div class="note">${rec.url
-          ? "위키백과 인포박스에서 코칭 이력을 뽑지 못했습니다."
-          : "위키백과 문서를 찾지 못해 코칭 이력을 싣지 못했습니다."}</div>`}
-    ${link}
-    <div class="note">영어 위키백과 인포박스의 코칭 이력을 빌드 때 옮겨 온 것입니다.
-      선수 경력은 싣지 않습니다. NFL 팀만 한글로 옮기고 대학·그 밖의 팀과
-      역할 이름은 원문 그대로 둡니다.</div>
+      :`<div class="note">코칭 이력을 싣지 못했습니다.</div>`}
     </div>`;
   pnl.querySelector(".x").onclick=closePanel;
   ov.classList.add("on");
