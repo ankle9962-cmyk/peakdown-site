@@ -543,7 +543,53 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
   .pnl table.career tr.srow .yr{font-size:11.5px;padding-left:6px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ── 좌측 슬라이드 메뉴 ──────────────────────────────────────────────────
+   전부 position:fixed 입니다. 보드 위에 얹혀도 보드의 흐름을 한 픽셀도
+   건드리지 않아야 하기 때문입니다(닫혀 있을 때 보드는 예전과 완전히 같습니다).
+   닫힌 서랍은 visibility:hidden 이라 탭 순서에서도 빠집니다. */
+.navtog{position:fixed;top:12px;left:12px;z-index:210;width:40px;height:36px;
+ display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 9px;
+ background:var(--card);border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.navtog span{display:block;height:2px;background:var(--dim);border-radius:2px;
+ transition:background .15s}
+.navtog:hover span{background:var(--ink)}
+.navtog:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.navov{position:fixed;inset:0;z-index:190;background:rgba(4,7,14,.62);
+ opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s}
+.navov.on{opacity:1;visibility:visible}
+.sidenav{position:fixed;top:0;bottom:0;left:0;z-index:200;width:264px;max-width:82vw;
+ background:var(--board);border-right:1px solid var(--line);
+ transform:translateX(-100%);visibility:hidden;
+ transition:transform .18s ease,visibility .18s;
+ display:flex;flex-direction:column;padding:58px 0 22px;overflow-y:auto}
+.sidenav.on{transform:none;visibility:visible}
+/* 위쪽 여백은 햄버거 자리를 비워 두려는 것입니다 — 버튼이 서랍보다 위에
+   떠 있어서(z-index) 여백이 없으면 브랜드 글자를 가립니다. */
+.sidenav .brand{font-size:19px;font-weight:800;letter-spacing:-.02em;
+ padding:0 22px 16px;color:var(--ink)}
+.sidenav a{display:block;padding:11px 22px;color:var(--dim);text-decoration:none;
+ font-size:15px;font-weight:600;letter-spacing:-.01em;border-left:3px solid transparent}
+.sidenav a:hover{color:var(--ink);background:rgba(255,255,255,.03)}
+.sidenav a[aria-current="page"]{color:var(--ink);border-left-color:var(--acc);
+ background:rgba(43,95,217,.10)}
+.sidenav a:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+@media(max-width:640px){
+  .sidenav{width:min(300px,86vw);padding-top:52px}
+  .navtog{top:8px;left:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .navov,.sidenav{transition:none}
+}
 </style></head><body>
+<button class="navtog" id="navtog" type="button" aria-label="메뉴 열기"
+        aria-expanded="false" aria-controls="sidenav"><span></span><span></span><span></span></button>
+<div class="navov" id="navov"></div>
+<nav class="sidenav" id="sidenav" aria-label="사이트 메뉴">
+  <div class="brand">픽다운</div>
+  <a href="/weekly/">주차별 자료</a><a href="/news/">주요 뉴스</a><a href="/columns/">칼럼/분석</a><a href="/stats/team/">26시즌 팀 스탯</a><a href="/stats/player/">26시즌 선수 스탯</a><a href="/" aria-current="page">팀별 자료</a>
+</nav>
+
 
 <div class="nav">
   <button data-sec="team">팀별 분석</button>
@@ -1620,4 +1666,26 @@ document.getElementById("fit").onclick=e=>{
   e.target.setAttribute("aria-pressed",fitted);
 };
 render();
+</script>
+<script>
+(function(){
+  var t=document.getElementById('navtog'),
+      n=document.getElementById('sidenav'),
+      o=document.getElementById('navov');
+  if(!t||!n||!o) return;
+  function set(open){
+    t.setAttribute('aria-expanded',String(open));
+    t.setAttribute('aria-label',open?'메뉴 닫기':'메뉴 열기');
+    n.classList.toggle('on',open);
+    o.classList.toggle('on',open);
+    if(open){ var a=n.querySelector('a'); if(a) a.focus(); } else { t.focus(); }
+  }
+  t.addEventListener('click',function(){
+    set(t.getAttribute('aria-expanded')!=='true');
+  });
+  o.addEventListener('click',function(){ set(false); });
+  addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&t.getAttribute('aria-expanded')==='true') set(false);
+  });
+})();
 </script></body></html>
