@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>26시즌 팀 스탯 · 픽다운</title>
+<title>팀 스탯 순위 · 픽다운</title>
 <link rel="stylesheet" href="/site.css">
 </head>
 <body>
@@ -11,15 +11,18 @@
         aria-expanded="false" aria-controls="sidenav"><span></span><span></span><span></span></button>
 <div class="navov" id="navov"></div>
 <nav class="sidenav" id="sidenav" aria-label="사이트 메뉴">
-  <a href="/weekly/">주차별 자료</a><a href="/news/">주요 뉴스</a><a href="/columns/">칼럼/분석</a><a href="/stats/team/" aria-current="page">26시즌 팀 스탯</a><a href="/stats/player/">26시즌 선수 스탯</a><a href="/">팀별 자료</a>
+  <a href="/weekly/">주차별 자료</a><a href="/news/">주요 뉴스</a><a href="/columns/">칼럼/분석</a><a href="/stats/team/" aria-current="page">팀 스탯 순위</a><a href="/stats/player/">26시즌 선수 스탯</a><a href="/">팀별 자료</a>
 </nav>
 <div class="wrap">
-<div class="phd"><h1>26시즌 팀 스탯</h1>
+<div class="phd"><h1>팀 스탯 순위</h1>
   <span class="sub">정규시즌 · 32팀 순위</span><span class="cnt" id="cnt"></span></div>
 <div class="pick"><label for="season">시즌</label><select id="season"></select></div>
+<div class="tabs" id="tabs" role="tablist"></div>
 <div id="out"></div>
 <p class="note" style="margin-top:18px">순위는 그 시즌 리그 전체에서 매깁니다.
-  수비 칸은 적게 내줄수록 1위입니다. 열 제목을 누르면 그 칸으로 정렬합니다.</p>
+  칸마다 좋은 쪽이 1위입니다 — 실점·허용야드는 적을수록, 색·테이크어웨이는
+  많을수록 1위입니다. 열 제목을 누르면 그 칸으로 정렬합니다.
+  <span id="gap"></span></p>
 </div>
 <script>
 (function(){
@@ -47,54 +50,78 @@
 <script>
 const TEAMS={"ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens", "BUF": "Buffalo Bills", "CAR": "Carolina Panthers", "CHI": "Chicago Bears", "CIN": "Cincinnati Bengals", "CLE": "Cleveland Browns", "DAL": "Dallas Cowboys", "DEN": "Denver Broncos", "DET": "Detroit Lions", "GB": "Green Bay Packers", "HOU": "Houston Texans", "IND": "Indianapolis Colts", "JAX": "Jacksonville Jaguars", "KC": "Kansas City Chiefs", "LA": "Los Angeles Rams", "LAC": "Los Angeles Chargers", "LV": "Las Vegas Raiders", "MIA": "Miami Dolphins", "MIN": "Minnesota Vikings", "NE": "New England Patriots", "NO": "New Orleans Saints", "NYG": "New York Giants", "NYJ": "New York Jets", "PHI": "Philadelphia Eagles", "PIT": "Pittsburgh Steelers", "SEA": "Seattle Seahawks", "SF": "San Francisco 49ers", "TB": "Tampa Bay Buccaneers", "TEN": "Tennessee Titans", "WAS": "Washington Commanders"};
 const SEASONS=[1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-
-// 여덟 칸 — team_season_ranks.json 의 keys 순서와 그대로 짝을 맞춥니다.
-// 값도 등수도 그 파일에서 그대로 옵니다. 여기서 다시 계산하는 건 없습니다.
-const COLS=[["pf","득점"],["off_yds","총야드"],["off_pass","패싱야드"],["off_rush","러싱야드"],
-            ["pa","실점"],["def_yds","허용야드"],["def_pass","허용패싱"],["def_rush","허용러싱"]];
-
+const TABS=[{"n": "기본", "c": [["rec", "승-패"], ["pf", "득점"], ["off_yds", "총야드"], ["off_pass", "패싱야드"], ["off_rush", "러싱야드"], ["pa", "실점"], ["def_yds", "허용야드"], ["def_pass", "허용패싱"], ["def_rush", "허용러싱"]], "d": "rec"}, {"n": "공격", "c": [["pf", "득점"], ["off_yds", "총야드"], ["off_epa", "플레이당 EPA"], ["off_third", "서드다운 갱신율"], ["off_rz", "레드존 TD 성공률"], ["off_giveaway", "턴오버"]], "d": "pf"}, {"n": "패스", "c": [["off_pass", "패싱야드"], ["off_pass_att", "패스시도"], ["off_cmp_pct", "패스 성공률"], ["off_pass_td", "패싱 TD"], ["off_int", "인터셉션"], ["off_rating", "패서레이팅"], ["off_adot", "ADOT"]], "d": "off_pass"}, {"n": "러닝", "c": [["off_rush", "러싱야드"], ["off_rush_att", "러싱시도"], ["off_rush_ypc", "시도당 러싱야드"], ["off_rush_td", "러싱 TD"], ["off_bp_run", "빅플레이 러싱 10+"]], "d": "off_rush"}, {"n": "수비", "c": [["pa", "실점"], ["def_yds", "허용야드"], ["def_epa", "허용 플레이당 EPA"], ["def_third", "서드다운 방어율"], ["def_rz", "레드존 방어율"], ["def_takeaway", "테이크어웨이"]], "d": "pa"}, {"n": "패스(수비)", "c": [["def_pass", "허용 패싱야드"], ["def_cmp_pct", "허용 패스 성공률"], ["def_pass_td", "허용 패싱 TD"], ["def_ints", "인터셉션"], ["def_sk", "색"]], "d": "def_pass"}, {"n": "러닝(수비)", "c": [["def_rush", "허용 러싱야드"], ["def_rush_ypc", "허용 시도당 러싱야드"], ["def_rush_td", "허용 러싱 TD"]], "d": "def_rush"}];
+const UNIT={"off_third": "%", "off_rz": "%", "off_cmp_pct": "%", "def_third": "%", "def_rz": "%", "def_cmp_pct": "%"};
 const R=(typeof window.TEAM_SEASON_RANKS!=="undefined")?window.TEAM_SEASON_RANKS:null;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sel=document.getElementById("season"), out=document.getElementById("out"),
-      cnt=document.getElementById("cnt");
-let sort={k:"pf",dir:1};          // dir 1 = 1위부터, -1 = 꼴찌부터
+      cnt=document.getElementById("cnt"), tabs=document.getElementById("tabs"),
+      gap=document.getElementById("gap");
+let tab=0, sort={k:TABS[0].d,dir:1};
 sel.innerHTML=SEASONS.map(y=>`<option value="${y}">${y}</option>`).join("");
-// 자료가 있는 가장 최근 시즌을 기본으로 엽니다.
 const withData=SEASONS.filter(y=>R&&R.seasons[String(y)]);
 sel.value=String(withData.length?withData[withData.length-1]:SEASONS[SEASONS.length-1]);
-function idx(k){ return R.keys.indexOf(k); }
+tabs.innerHTML=TABS.map((t,i)=>`<button role="tab" data-i="${i}"
+  aria-selected="${i===0}">${esc(t.n)}</button>`).join("");
+const idx=k=>R.keys.indexOf(k);
+// 승-패 칸은 전적 문자열을 보여 주고 순위·정렬은 승률(wpct)로 합니다.
+const dataKey=k=>k==="rec"?"wpct":k;
+function cell(rows,t,k){
+  if(k==="rec") return (R.rec&&R.rec[sel.value]&&R.rec[sel.value][t])||"—";
+  const i=idx(k); if(i<0) return "—";
+  const v=rows[t][2*i];
+  if(v==null) return "—";
+  // 표시 자릿수는 자료 파일이 정합니다 — 보드 왼쪽 열과 같은 자릿수입니다.
+  const dc=(R.dec&&R.dec[k]!=null)?R.dec[k]:0;
+  return (dc ? v.toFixed(dc) : Math.round(v).toLocaleString()) + (UNIT[k]||"");
+}
+function rankOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i+1]; }
+function valOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i]; }
 function draw(){
   const y=sel.value, rows=R&&R.seasons[y];
   if(!rows){
-    cnt.textContent="";
+    cnt.textContent=""; gap.textContent="";
     out.innerHTML=`<div class="pending">${esc(y)} 시즌 개막 후 집계됩니다</div>`;
     return;
   }
-  const list=Object.keys(rows).map(t=>{
-    const o={t};
-    for(const [k] of COLS){ const i=idx(k); o[k]=rows[t][2*i]; o[k+"_r"]=rows[t][2*i+1]; }
-    return o;
+  const cols=TABS[tab].c;
+  const list=Object.keys(rows).slice();
+  list.sort((a,b)=>{
+    if(sort.k==="t") return sort.dir*a.localeCompare(b);
+    const ra=rankOf(rows,a,sort.k), rb=rankOf(rows,b,sort.k);
+    // 자료가 없는 칸은 방향과 무관하게 항상 아래로 보냅니다.
+    if(ra==null&&rb==null) return a.localeCompare(b);
+    if(ra==null) return 1;
+    if(rb==null) return -1;
+    return sort.dir*(ra-rb);
   });
-  // 등수로 정렬합니다 — 공격은 많을수록, 수비는 적게 내줄수록 1위라 방향이
-  // 반대인데, 등수는 이미 그 방향이 반영된 값이라 한 규칙으로 끝납니다.
-  list.sort((a,b)=> sort.k==="t"
-    ? sort.dir*a.t.localeCompare(b.t)
-    : sort.dir*((a[sort.k+"_r"]||99)-(b[sort.k+"_r"]||99)));
   const arrow=k=>sort.k===k?`<span class="ar">${sort.dir>0?"▲":"▼"}</span>`:"";
-  const sortAttr=k=>sort.k===k?` aria-sort="${sort.dir>0?"ascending":"descending"}"`:"";
+  const sa=k=>sort.k===k?` aria-sort="${sort.dir>0?"ascending":"descending"}"`:"";
   cnt.textContent=`${list.length}팀`;
+  const missing=cols.filter(([k])=>k!=="rec"&&list.every(t=>valOf(rows,t,k)==null))
+                    .map(([,lb])=>lb);
+  gap.textContent=missing.length
+    ? `이 시즌에는 ${missing.join("·")} 원본 자료가 없어 —로 둡니다.` : "";
   out.innerHTML=`<div class="tw"><table><thead><tr>`
-    +`<th class="tm" data-k="t"${sortAttr("t")}>팀${arrow("t")}</th>`
-    +COLS.map(([k,lb])=>`<th data-k="${k}"${sortAttr(k)}>${esc(lb)}${arrow(k)}</th>`).join("")
+    +`<th class="tm" data-k="t"${sa("t")}>팀${arrow("t")}</th>`
+    +cols.map(([k,lb])=>`<th data-k="${k}"${sa(k)}>${esc(lb)}${arrow(k)}</th>`).join("")
     +`</tr></thead><tbody>`
-    +list.map(r=>`<tr><td class="tm">${esc(TEAMS[r.t]||r.t)}</td>`
-      +COLS.map(([k])=>{
-        const rk=r[k+"_r"];
-        return `<td>${Number(r[k]).toLocaleString()}`
-             +`<span class="rk${rk&&rk<=5?" hot":""}">${rk}위</span></td>`;
+    +list.map(t=>`<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
+      +cols.map(([k])=>{
+        const rk=rankOf(rows,t,k), txt=cell(rows,t,k);
+        return `<td>${esc(txt)}`+(rk!=null&&txt!=="—"
+          ? `<span class="rk${rk<=5?" hot":""}">${rk}위</span>`:"")+`</td>`;
       }).join("")+`</tr>`).join("")
     +`</tbody></table></div>`;
 }
+tabs.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("button[data-i]");
+  if(!b) return;
+  tab=+b.dataset.i;
+  [...tabs.children].forEach((x,i)=>x.setAttribute("aria-selected",String(i===tab)));
+  sort={k:TABS[tab].d,dir:1};
+  draw();
+});
 out.addEventListener("click",e=>{
   const th=e.target.closest&&e.target.closest("th[data-k]");
   if(!th) return;

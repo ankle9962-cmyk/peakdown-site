@@ -74,6 +74,18 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
  cursor:pointer}
 .pick select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .note{color:var(--dim);font-size:15px;line-height:1.75}
+/* 부문 탭 — 좁은 화면에서는 줄바꿈 대신 가로로 밀어 봅니다. 줄바꿈을 쓰면
+   탭 줄이 세 줄까지 늘어나 표가 화면 밖으로 밀립니다. */
+.tabs{display:flex;gap:6px;margin:0 0 18px;overflow-x:auto;padding-bottom:4px;
+ scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.tabs button{flex:none;background:var(--card);color:var(--dim);
+ border:1px solid var(--line);border-radius:7px;padding:7px 15px;
+ font:inherit;font-size:13.5px;font-weight:700;letter-spacing:-.01em;
+ cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--acc);color:#fff;
+ border-color:var(--acc)}
+.tabs button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .pending{background:var(--board);border:1px solid var(--line);border-radius:10px;
  padding:38px 26px;text-align:center;color:var(--dim);font-size:16px;font-weight:600}
 h2.sec{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:34px 0 12px}
@@ -100,6 +112,8 @@ td.pos{color:var(--dim);font-weight:600}
 @media(max-width:640px){
   .wrap{padding:56px 12px 56px}
   .phd h1{font-size:21px}
+  .tabs{gap:5px;margin-bottom:14px}
+  .tabs button{padding:6px 11px;font-size:12.5px}
   th,td{padding:8px 8px;font-size:13px}
   thead th{font-size:11.5px}
   td .rk{font-size:11px;margin-left:4px}
