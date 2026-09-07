@@ -119,6 +119,39 @@ td.pos{color:var(--dim);font-weight:600}
   td .rk{font-size:11px;margin-left:4px}
 }
 
+/* ── 26시즌 팀 순위 ───────────────────────────────────────────────────────
+   디비전 카드 여덟 장(1999–2001 은 여섯 장)을 두 줄로 세웁니다. 카드 안은
+   하위 페이지 공용 표 스타일 그대로이고, 카드가 테두리를 그리므로 안쪽 .tw
+   에서는 테두리를 뺍니다. 좁은 화면에서는 한 줄로 내려오고, 표 자체는 공용
+   .tw 의 가로 스크롤에 맡깁니다 — 팀 이름을 줄이면 어느 팀인지 알아보기가
+   어려워집니다. */
+/* 디비전 표는 팀 이름을 다 적으면 620px 쯤 됩니다. 1180px 본문에 두 장을
+   넣으면 카드마다 가로 스크롤이 생겨서, 이 페이지만 본문을 1520px 까지 쓰고
+   두 장이 안 들어가는 폭에서는 한 장씩 세로로 내립니다. auto-fit 이라 폭이
+   정하지 화면 크기를 따로 재지 않습니다. */
+.wrap.mid{max-width:1520px}
+.divgrid{display:grid;gap:16px;
+ grid-template-columns:repeat(auto-fit,minmax(620px,1fr))}
+.divbox{background:var(--board);border:1px solid var(--line);border-radius:10px;
+ overflow:hidden}
+.divbox h3{font-size:14px;font-weight:800;letter-spacing:.01em;padding:11px 14px;
+ border-bottom:1px solid var(--line)}
+.divbox .tw{border:0;border-radius:0;background:transparent}
+.divbox th,.divbox td{padding:8px 10px;font-size:13.5px}
+.divbox thead th{cursor:default}
+.divbox thead th:hover{color:var(--dim)}
+th.rn,td.rn{width:1%;text-align:right;color:var(--dim);font-size:12.5px;
+ font-weight:700;padding-right:2px}
+td.dif{font-weight:700}
+#note{max-width:78ch}
+/* 620px 짜리 최소 폭은 화면이 그보다 좁으면 그대로 넘칩니다 — 좁은 쪽에서는
+   최소 폭을 풀어 칸이 화면에 맞게 줄고, 표는 .tw 의 가로 스크롤에 맡깁니다. */
+@media(max-width:700px){.divgrid{grid-template-columns:1fr}}
+@media(max-width:640px){
+  .divbox h3{font-size:13px;padding:9px 12px}
+  .divbox th,.divbox td{padding:7px 7px;font-size:12.5px}
+}
+
 /* ── 주차별 자료 ─────────────────────────────────────────────────────────
    왼쪽부터 [경기 목록][박스스코어][리뷰] 세 칸입니다. 목록 칸은 제 내용
    폭(fit-content)에 딱 맞춰 섭니다 — 예전 18% 규칙은 1920px 에서 288px 을
