@@ -13,9 +13,18 @@
 <nav class="sidenav" id="sidenav" aria-label="사이트 메뉴">
   <a href="/weekly/" aria-current="page">주차별 자료</a><a href="/news/">주요 뉴스</a><a href="/columns/">칼럼/분석</a><a href="/stats/team/">팀 스탯 순위</a><a href="/stats/player/">26시즌 선수 스탯</a><a href="/">팀별 자료</a>
 </nav>
-<div class="wrap">
-<div class="phd"><h1>주차별 자료</h1></div>
-<div class="pending">준비 중입니다</div>
+<div class="wrap wide">
+<div class="phd"><h1>주차별 자료</h1>
+  <span class="sub" id="wsub"></span></div>
+<div class="pick"><label for="week">주</label><select id="week"></select></div>
+<div class="wcols" id="wcols">
+  <div class="wcol"><h3 id="ghd">경기</h3>
+    <div class="glist" id="glist"><div class="gnote">불러오는 중…</div></div></div>
+  <div class="wcol"><h3>박스스코어</h3>
+    <div class="gbox" id="gbox"><div class="gnote">불러오는 중…</div></div></div>
+  <div class="wcol"><h3>리뷰<em id="rvhd"></em></h3>
+    <div class="rvw" id="rvw"></div></div>
+</div>
 </div>
 <script>
 (function(){
@@ -38,6 +47,288 @@
     if(e.key==='Escape'&&t.getAttribute('aria-expanded')==='true') set(false);
   });
 })();
+</script>
+<script src="/games.js"></script>
+<script>
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const REVIEWS={};
+
+// ── 경기 결과 ─────────────────────────────────────────────────────────────
+// ESPN summary 의 boxscore.teams[i].statistics[] 를 매치업 표로 그립니다.
+// 줄과 순서는 아래 표가 정하고 숫자는 응답이 정합니다 — name 으로 항목을 찾아
+// 그 항목의 displayValue 를 그대로 찍습니다. "4-11"·"2-17"·"26:31" 처럼 이미
+// 서식이 잡혀 오는 값을 value 로 다시 만들면 서식이 깨지고, 애초에 value 는
+// totalYards·turnovers·redZoneAttempts 에서 "-" 로 오는 일이 잦아 못 믿습니다.
+const GROWS=[
+  ["m","퍼스트다운","firstDowns",1],
+  ["s","패싱 퍼스트다운","firstDownsPassing",1],
+  ["s","러싱 퍼스트다운","firstDownsRushing",1],
+  ["s","반칙에 의한 퍼스트다운","firstDownsPenalty",0],
+  ["s","3rd 다운 성공","thirdDownEff",1],
+  ["s","4th 다운 성공","fourthDownEff",1],
+  ["m","총 플레이","totalOffensivePlays",0],
+  ["m","총 전진야드","totalYards",1],
+  ["m","총 드라이브","totalDrives",0],
+  ["m","플레이당 야드","yardsPerPlay",1],
+  ["m","패싱","netPassingYards",1],
+  ["s","C/ATT","completionAttempts",0],
+  ["s","패스 시도당 야드","yardsPerPass",1],
+  ["s","인터셉션","interceptions",-1],
+  ["s","색-손실야드","sacksYardsLost",-1],
+  ["m","러싱","rushingYards",1],
+  ["s","러싱 시도","rushingAttempts",0],
+  ["s","러싱 시도당 야드","yardsPerRushAttempt",1],
+  ["m","레드존 (성공-시도)","redZoneAttempts",1],
+  ["m","반칙 (횟수-야드)","totalPenaltiesYards",-1],
+  ["m","턴오버","turnovers",-1],
+  ["s","펌블 로스트","fumblesLost",-1],
+  ["s","인터셉션","interceptions",-1],
+  ["m","수비·특별팀 TD","defensiveTouchdowns",1],
+  ["m","볼 점유 시간","possessionTime",0],
+];
+// "4-11"·"1-3" 은 성공/시도 비율로, "2-17"·"9-84" 는 뒤 숫자(잃은 야드)로
+// 견줍니다. 시도가 0 이면 견줄 게 없으니 양쪽 다 색을 안 넣습니다.
+const GEFF=new Set(["thirdDownEff","fourthDownEff","redZoneAttempts"]);
+const GPAIR=new Set(["sacksYardsLost","totalPenaltiesYards"]);
+function gnum(n,v){
+  if(v==null) return null;
+  const s=String(v).trim(), m=s.match(/^(-?\d+)\s*-\s*(-?\d+)$/);
+  if(GEFF.has(n)) return (m&&+m[2]>0)?+m[1]/+m[2]:null;
+  if(GPAIR.has(n)) return m?+m[2]:null;
+  const x=Number(s.replace(/,/g,""));
+  return Number.isFinite(x)?x:null;
+}
+// ESPN 약어 두 개가 nflverse 와 다릅니다. 로고 파일도 nflverse 이름이라
+// 같은 표가 로고 경로까지 고칩니다.
+const ESPN2NFL={LAR:"LA",WSH:"WAS"};
+const gLogo=ab=>`/photos/logo_${esc(ESPN2NFL[ab]||ab)}.png`;
+const GAPI="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+const G=(typeof window.NFL_GAMES!=="undefined")?window.NFL_GAMES:null;
+const WEEKS=(G&&Array.isArray(G.weeks))?G.weeks:[];
+
+// 실시간 응답과 구운 자료는 열 이름이 다릅니다. 들어오는 즉시 한 모양으로
+// 맞춰 두면 그리는 쪽은 어디서 온 자료인지 몰라도 됩니다.
+function gNorm(x){
+  const ts=((x||{}).boxscore||{}).teams;
+  if(ts) return ts.map(t=>({ab:t.team.abbreviation,ha:t.homeAway,
+    stats:(t.statistics||[]).map(s=>({n:s.name,v:s.displayValue,lb:s.label}))}));
+  return Array.isArray(x)?x:null;
+}
+function gRow(ev){
+  const c=ev.competitions[0], st=ev.status.type, sd={};
+  c.competitors.forEach(x=>sd[x.homeAway]=x);
+  if(!sd.home||!sd.away) return null;
+  const one=x=>({ab:x.team.abbreviation,sc:x.score,w:!!x.winner});
+  const r={id:ev.id,date:ev.date,wk:(ev.week||{}).number,st:st.state,
+    done:!!st.completed,lb:st.shortDetail||st.detail,
+    away:one(sd.away),home:one(sd.home)};
+  // 대진이 아직 안 정해진 포스트시즌 자리는 목록에서 뺍니다.
+  return (r.away.ab==="TBD"||r.home.ab==="TBD")?null:r;
+}
+
+// 세션 캐시. 한 번 받은 주·경기는 다시 안 부릅니다.
+// sessionStorage 는 file:// 에서 막히는 브라우저가 있어 되면 쓰고 아니면 맙니다.
+const GMEM=new Map();
+function gStore(k,v){ try{sessionStorage.setItem("nflg:"+k,JSON.stringify(v))}catch(e){} }
+function gLoad(k){ try{return JSON.parse(sessionStorage.getItem("nflg:"+k)||"null")}catch(e){return null} }
+
+// 실시간이 먼저, 구운 자료는 예비입니다 — 그 반대가 아닙니다.
+// 다만 2026-08 현재 ESPN 앞단(Akamai)이 브라우저에서 온 요청을 403 으로
+// 끊습니다. curl·python 은 200 인데 브라우저만 막혀서, 실제로는 구운 자료가
+// 늘 쓰입니다. 그래서 한 번 막히면 그 세션에서는 더 두드리지 않습니다 —
+// 주나 경기를 누를 때마다 실패할 요청을 보내 봐야 콘솔만 더럽히고 느려집니다.
+let gLive=true;
+async function gFetch(url,key){
+  const hit=GMEM.get(key)||gLoad(key);
+  if(hit){ GMEM.set(key,hit); return hit; }
+  if(!gLive) return null;
+  try{
+    const r=await fetch(url,{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); GMEM.set(key,j); gStore(key,j); return j; }
+  }catch(e){}
+  gLive=false;                          // 차단은 경기별이 아니라 출처 전체입니다
+  return null;
+}
+
+let widx=-1, GLIST=[], GSRC="", gSel=null;
+// 킥오프는 UTC 로 오는데 그대로 잘라 쓰거나 보는 사람 시간대로 바꾸면 날짜가
+// 하루 밀립니다 (11/09 18:00Z 경기가 한국에서는 11/10). NFL 경기 날짜는 미국
+// 동부 기준이라 거기에 맞춥니다.
+function gDate(iso,opt){
+  const d=new Date(iso);
+  if(isNaN(d)) return "";
+  try{ return d.toLocaleDateString("en-CA",
+    Object.assign({timeZone:"America/New_York"},opt)); }
+  catch(e){ return String(iso).slice(0,10); }
+}
+// 목록의 날짜는 M/D 로 줄입니다. 보드에서 쓰던 en-CA 는 같은 옵션으로
+// "08-27" 을 내놓는데, 좁아진 목록 칸에서는 그 8px 이 줄바꿈을 만듭니다.
+// 시간대와 값은 그대로고 표기만 짧아집니다.
+function gWhen(iso){
+  const d=new Date(iso);
+  if(isNaN(d)) return "";
+  try{ return d.toLocaleDateString("en-US",{timeZone:"America/New_York",
+    month:"numeric",day:"numeric"}); }
+  catch(e){ return String(iso).slice(5,10); }
+}
+// 아직 안 한 경기는 킥오프 시각을 답니다. ESPN 의 shortDetail("9/13 - 1:00 PM
+// EDT")은 목록 칸에 안 들어가서, 같은 값을 같은 시간대로 줄여 적습니다.
+// 원문은 title 로 남겨 마우스를 올리면 그대로 보입니다.
+function gKick(iso){
+  const d=new Date(iso);
+  if(isNaN(d)) return "";
+  try{ return d.toLocaleString("en-US",{timeZone:"America/New_York",
+    month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:false})
+    .replace(",",""); }
+  catch(e){ return gWhen(iso); }
+}
+
+function gListHTML(){
+  if(!GLIST||!GLIST.length) return `<div class="gnote">이 주의 경기 목록이 없습니다.</div>`;
+  return GLIST.map(g=>{
+    const sd=t=>`<span class="gs${t.w?" w":""}"><img src="${gLogo(t.ab)}" alt=""
+        onerror="this.style.visibility='hidden'"><b>${esc(t.ab)}</b>
+        <i>${g.done?esc(t.sc):"–"}</i></span>`;
+    const meta=g.done?gWhen(g.date):gKick(g.date);
+    return `<div class="grow" role="button" tabindex="0" data-g="${esc(g.id)}"
+        aria-pressed="${g.id===gSel}">${sd(g.away)}<span class="gat">@</span>${sd(g.home)}
+      <span class="gw" title="${esc(g.lb||"")}">${esc(meta)}</span></div>`;
+  }).join("");
+}
+
+function gTableHTML(g,box,src){
+  const A=box.find(t=>t.ha==="away")||box[0], H=box.find(t=>t.ha==="home")||box[1];
+  const mk=t=>{const m=new Map();(t.stats||[]).forEach(s=>{if(!m.has(s.n))m.set(s.n,s)});return m};
+  const ma=mk(A), mh=mk(H), used=new Set();
+  let rows="";
+  for(const [lv,lb,n,dir] of GROWS){
+    const a=ma.get(n), h=mh.get(n);
+    if(!a&&!h) continue;                 // 응답에 아예 없는 줄은 접습니다
+    used.add(n);
+    const va=gnum(n,a&&a.v), vh=gnum(n,h&&h.v);
+    let ca="",ch="";
+    if(dir&&va!=null&&vh!=null&&va!==vh){ if((va>vh)===(dir>0)) ca="on"; else ch="on"; }
+    rows+=`<div class="gr lv-${lv}"><span class="gl">${esc(lb)}</span>
+      <span class="gv ${ca}">${esc(a?a.v:"—")}</span>
+      <span class="gv ${ch}">${esc(h?h.v:"—")}</span></div>`;
+  }
+  // 표가 못 받아 준 항목은 label 그대로 아래에 붙입니다. 목록은 엔드포인트가
+  // 문서화돼 있지 않아 언제든 늘어날 수 있다는 전제로 만듭니다.
+  const ex=[];
+  for(const s of [...(A.stats||[]),...(H.stats||[])])
+    if(!used.has(s.n)&&!ex.some(e=>e.n===s.n)) ex.push(s);
+  if(ex.length) rows+=`<div class="gr xhd"><span class="gl">
+      표에 없는 항목 — ESPN 이 새로 넣었거나 이름이 바뀐 것</span><span></span><span></span></div>`
+    + ex.map(s=>`<div class="gr lv-m"><span class="gl">${esc(s.lb||s.n)}</span>
+        <span class="gv">${esc((ma.get(s.n)||{}).v??"—")}</span>
+        <span class="gv">${esc((mh.get(s.n)||{}).v??"—")}</span></div>`).join("");
+
+  const th=(t,sd)=>`<span class="gth${sd.w?" w":""}">
+    <img src="${gLogo(t.ab)}" alt="" onerror="this.style.visibility='hidden'">
+    <b>${esc(t.ab)}</b><i>${g.done?esc(sd.sc):"–"}</i>
+    <small>${sd===g.away?"AWAY":"HOME"}</small></span>`;
+  const wk=(WEEKS[widx]&&WEEKS[widx].lb)?` · ${esc(WEEKS[widx].lb)}`:"";
+  return `<div class="ghead">
+      <span class="gtitle"><b>${esc(g.away.ab)} @ ${esc(g.home.ab)}</b>
+        <span>${esc(g.date?gDate(g.date):"")}${wk} · ${esc(g.lb||"")}
+          <span class="gsrc">· ${src==="live"?"실시간":"내장 자료"}</span></span></span>
+      <span class="gthr"><span></span>${th(A,g.away)}${th(H,g.home)}</span></div>
+    <div class="gtab">${rows}</div>
+    <div class="gnpn"><b>패싱</b>은 ESPN 의 <b>net</b> 패싱야드입니다 — 색으로 잃은
+      야드가 이미 빠져 있습니다. 같은 응답의 선수별 패싱야드는 gross 라
+      (프로브에서 잰 예: BUF @ MIA 팀 289 · 선수 306) 선수 기록을 더해서
+      이 줄과 맞춰 볼 수 없습니다.</div>`;
+}
+
+// 리뷰는 빌드 때 박아 둔 HTML 입니다. 없으면 조용히 비웁니다 — 여기서 문장을
+// 지어내거나 어디선가 받아 오는 일은 없습니다.
+function gReview(g){
+  const box=document.getElementById("rvw"), hd=document.getElementById("rvhd");
+  if(!box) return;
+  if(hd) hd.textContent=g?`${g.away.ab} @ ${g.home.ab}`:"";
+  const html=g?REVIEWS[g.id]:null;
+  box.innerHTML=html||`<div class="rvnone">이 경기의 리뷰는 아직 없습니다.</div>`;
+}
+
+async function gShow(id){
+  gSel=id;
+  const g=(GLIST||[]).find(x=>x.id===id);
+  const main=document.getElementById("gbox");
+  if(!main) return;
+  document.querySelectorAll(".grow").forEach(b=>
+    b.setAttribute("aria-pressed",String(b.dataset.g===id)));
+  gReview(g);
+  if(!g){ main.innerHTML=`<div class="gnote">경기를 고르세요.</div>`; return; }
+  if(!g.done){
+    main.innerHTML=`<div class="ghead"><span class="gtitle">
+        <b>${esc(g.away.ab)} @ ${esc(g.home.ab)}</b>
+        <span>${esc(g.lb||"아직 하지 않은 경기입니다")}</span></span></div>
+      <div class="gnote">아직 하지 않은 경기라 기록이 없습니다.</div>`;
+    return;
+  }
+  main.innerHTML=`<div class="gnote">불러오는 중…</div>`;
+  let src="live", box=gNorm(await gFetch(`${GAPI}/summary?event=${encodeURIComponent(id)}`,"box:"+id));
+  if(!box && G && G.box && G.box[id]){ box=gNorm(G.box[id]); src="baked"; }
+  if(gSel!==id) return;                  // 그 사이 다른 경기를 눌렀으면 버립니다
+  main.innerHTML = box ? gTableHTML(g,box,src)
+    : `<div class="gnote">기록을 받지 못했습니다 — ESPN 에 닿지 않고
+        games.js 에도 이 경기가 없습니다.</div>`;
+}
+
+// 한 주를 엽니다. 실시간 스코어보드가 그 주를 주면 그걸 쓰고, 아니면 구워 둔
+// 목록을 씁니다 — 보드에 있던 순서 그대로입니다.
+async function gWeek(i){
+  widx=i;
+  const w=WEEKS[i];
+  if(!w) return;
+  const ls=document.getElementById("glist"), hd=document.getElementById("ghd");
+  GLIST=(w.games||[]).slice(); GSRC="baked";
+  const live=await gFetch(
+    `${GAPI}/scoreboard?dates=${encodeURIComponent(G.season)}`
+    +`&seasontype=${w.st}&week=${w.wk}`,`sb:${w.st}:${w.wk}`);
+  if(widx!==i) return;                   // 그 사이 다른 주를 골랐으면 버립니다
+  const rows=((live||{}).events||[]).map(gRow).filter(Boolean);
+  if(rows.length){ GLIST=rows; GSRC="live"; }
+  GLIST.sort((a,b)=>String(a.date).localeCompare(String(b.date))||
+                    String(a.id).localeCompare(String(b.id)));
+  // 그 주에서 마지막으로 끝난 경기를 먼저 엽니다. 하나도 안 끝났으면 첫 경기.
+  const done=GLIST.filter(g=>g.done);
+  gSel=(done.length?done[done.length-1]:GLIST[0]||{}).id||null;
+  if(hd) hd.innerHTML=`경기<em>${esc(w.lb)} · ${GLIST.length}경기</em>`;
+  if(ls) ls.innerHTML=gListHTML();
+  gShow(gSel);
+}
+
+const wsel=document.getElementById("week"), wsub=document.getElementById("wsub");
+if(!WEEKS.length){
+  document.getElementById("wcols").innerHTML=
+    `<div class="pending">경기 자료가 아직 없습니다 —
+      build_depthcharts.py --games 로 games.js 를 구우면 채워집니다.</div>`;
+}else{
+  wsel.innerHTML=WEEKS.map((w,i)=>`<option value="${i}">${esc(w.lb)}</option>`).join("");
+  // 기본 = 결과가 있는 마지막 주. games.js 가 구울 때 정해 둔 값을 먼저 보고,
+  // 없으면 여기서 다시 찾습니다.
+  let def=-1;
+  if(G.cur) def=WEEKS.findIndex(w=>w.st===G.cur.st&&w.wk===G.cur.wk);
+  if(def<0) for(let i=0;i<WEEKS.length;i++)
+    if((WEEKS[i].games||[]).some(g=>g.done)) def=i;
+  if(def<0) def=0;
+  wsel.value=String(def);
+  if(wsub) wsub.textContent=`${G.season} 시즌`+(G.stamp?` · 자료 ${G.stamp}`:"");
+  wsel.onchange=()=>gWeek(+wsel.value);
+  gWeek(def);
+}
+
+// 목록 클릭은 칸에 위임합니다 — 목록을 다시 그려도 배선이 안 끊깁니다.
+const wcols=document.getElementById("wcols");
+wcols.addEventListener("click",e=>{
+  const r=e.target.closest&&e.target.closest(".grow");
+  if(r) gShow(r.dataset.g);
+});
+wcols.addEventListener("keydown",e=>{
+  const r=e.target.closest&&e.target.closest(".grow");
+  if(r&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); gShow(r.dataset.g); }
+});
 </script>
 </body>
 </html>
