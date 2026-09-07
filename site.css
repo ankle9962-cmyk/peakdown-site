@@ -120,129 +120,119 @@ td.pos{color:var(--dim);font-weight:600}
 }
 
 /* ── 주차별 자료 ─────────────────────────────────────────────────────────
-   왼쪽부터 [경기 목록][박스스코어][리뷰] 세 칸이고 비율은 19:24:57 입니다.
-   목록+박스스코어가 43%, 리뷰가 57% — 리뷰가 이 페이지의 본문이라 절반보다
-   넓어야 하고, 왼쪽 두 칸은 합쳐서 절반을 넘지 않아야 합니다. fr 로 잡아서
-   창 폭이 바뀌어도 이 비율은 그대로입니다.
-   1300px 아래에서는 가운데 칸이 250px 밑으로 눌려 표가 깨지므로 세 칸을
-   목록 → 박스스코어 → 리뷰 순서로 세로로 쌓습니다(문서 순서 그대로라
-   HTML 을 다시 배치할 필요가 없습니다). */
-.wrap.wide{max-width:1720px}
-.wcols{display:grid;grid-template-columns:minmax(0,19fr) minmax(0,24fr) minmax(0,57fr);
- gap:16px;align-items:start}
+   왼쪽부터 [경기 목록][박스스코어][리뷰] 세 칸입니다. 앞 두 칸은 비율(18%·25%)
+   로 크되 각각 400px·520px 에서 멈추고, 남는 폭은 전부 리뷰가 가져갑니다 —
+   화면이 넓어질수록 리뷰만 넓어지고 목록·박스스코어는 읽기 좋은 폭에서
+   더 벌어지지 않습니다. 어느 폭에서든 리뷰가 가장 넓고 절반을 넘습니다.
+   본문 폭 제한은 없습니다(.wrap.wide). 창 폭에서 왼쪽 메뉴와 28px 여백만
+   빼고 전부 씁니다 — 예전 1720px 제한이 넓은 화면에서 오른쪽을 통째로
+   비워 두고 있었습니다.
+
+   글자 크기는 이 칸 전체에 걸린 font-size 하나가 정하고, 안쪽은 전부 em 이라
+   같이 커지고 같이 작아집니다. 그래서 위계(머리글 > 큰 줄 > 보통 줄 > 세부
+   줄)가 어느 폭에서나 그대로 유지됩니다. 1366px 에서 12.5px, 1920px 에서
+   15px, 그보다 넓으면 16px 에서 멈춥니다. */
+.wrap.wide{max-width:none;padding-left:28px;padding-right:28px}
+.wcols{display:grid;grid-template-columns:min(18%,400px) min(25%,520px) minmax(0,1fr);
+ gap:22px;align-items:start;
+ font-size:clamp(12.5px,calc(0.45vw + 6.3px),16px)}
 .wcol{min-width:0}
-.wcol>h3{font-size:11.5px;line-height:1.2;letter-spacing:.13em;color:var(--dim);
- font-weight:700;border-bottom:2px solid #2f3d5c;padding-bottom:7px;margin-bottom:9px}
-.wcol>h3 em{font-style:normal;color:#4a5878;letter-spacing:0;margin-left:6px;
- font-size:10.5px;font-weight:600}
-/* 목록 칸 — 색인입니다. 로고는 15px, 글자는 11px 까지 내려 한 경기가 한 줄에
-   들어갑니다. 아직 안 한 경기는 점수 자리에 – 를 두고 킥오프 시각을 답니다. */
+.wcol>h3{font-size:1.05em;line-height:1.2;letter-spacing:.13em;color:var(--dim);
+ font-weight:700;border-bottom:2px solid #2f3d5c;padding-bottom:.5em;
+ margin-bottom:.6em}
+.wcol>h3 em{font-style:normal;color:#4a5878;letter-spacing:0;margin-left:.5em;
+ font-size:.8em;font-weight:600}
+/* 목록 칸 — 색인입니다. 한 경기가 한 줄에 들어가는 선에서 가장 크게 잡습니다.
+   아직 안 한 경기는 점수 자리에 – 를 두고 킥오프 시각을 답니다. */
 .glist{display:flex;flex-direction:column;gap:2px}
-.grow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:3.5px 4px;
+.grow{display:flex;align-items:center;gap:.26em;flex-wrap:wrap;padding:.34em .36em;
  border-radius:5px;border:1px solid transparent;cursor:pointer;background:#141b2c}
 .grow:hover{border-color:#2f3d5c}
 .grow[aria-pressed="true"]{background:#1d2740;border-color:#4a5f8f}
-.grow .gs{display:flex;align-items:center;gap:2.5px;min-width:0}
-.grow .gs img{width:15px;height:15px;object-fit:contain;flex:none}
-.grow .gs b{font-size:10.5px;font-weight:700;letter-spacing:0;color:var(--dim)}
-.grow .gs i{font-style:normal;font-size:12px;font-weight:700;color:var(--dim);
- font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
+.grow .gs{display:flex;align-items:center;gap:.2em;min-width:0}
+.grow .gs img{width:1.35em;height:1.35em;object-fit:contain;flex:none}
+.grow .gs b{font-size:.9em;font-weight:700;letter-spacing:0;color:var(--dim)}
+.grow .gs i{font-style:normal;font-size:1em;font-weight:700;color:var(--dim);
+ font-variant-numeric:tabular-nums;min-width:1.15em;text-align:right}
 /* 이긴 쪽만 밝게 둡니다 — 목록에서 결과를 읽는 가장 싼 방법입니다. */
 .grow .gs.w b,.grow .gs.w i{color:var(--ink)}
-.grow .gat{font-size:8.5px;color:#3c4761;font-weight:700}
-.grow .gw{margin-left:auto;padding-left:2px;font-size:9.5px;color:#4a5878;
+.grow .gat{font-size:.72em;color:#3c4761;font-weight:700}
+.grow .gw{margin-left:auto;padding-left:.2em;font-size:.8em;color:#4a5878;
  font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.gnote{padding:9px 2px;font-size:12.5px;color:var(--dim);line-height:1.6}
-/* 박스스코어 칸 — 보드에 있던 표 그대로이고 여백과 글자만 줄였습니다.
-   줄은 하나도 안 뺐습니다. 값 두 칸은 48px 고정이라 "32:55"·"11-15" 가
-   들어가고, 남는 폭은 전부 라벨이 가져가 두 줄로 접힐 수 있습니다. */
-.ghead{border-bottom:2px solid #2f3d5c;padding-bottom:7px}
-.ghead .gtitle b{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em}
-.ghead .gtitle>span{display:block;margin-top:3px;font-size:10.5px;color:var(--dim);
- font-weight:600;line-height:1.45;font-variant-numeric:tabular-nums}
-.gsrc{font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#4a5878}
-.gthr{display:grid;grid-template-columns:minmax(0,1fr) 52px 52px;gap:3px;
- margin-top:8px;align-items:end}
-.gth{display:flex;flex-direction:column;align-items:center;gap:1px}
-.gth img{width:21px;height:21px;object-fit:contain}
-.gth b{font-size:10.5px;font-weight:800;letter-spacing:.04em}
-.gth i{font-style:normal;font-size:14.5px;font-weight:800;color:var(--dim);
+.gnote{padding:.7em .2em;font-size:.88em;color:var(--dim);line-height:1.6}
+/* 박스스코어 칸 — 보드에 있던 표 그대로입니다. 줄은 하나도 안 뺐습니다.
+   줄 높이는 세로로 넉넉히 벌립니다(줄당 2.2em) — 25줄이면 머리글·각주까지
+   합쳐 1080px 화면을 거의 다 채웁니다. 값 두 칸은 4em 고정이라 가장 긴
+   "13-103" 이 들어가고, 남는 폭은 전부 라벨이 가져갑니다. */
+.ghead{border-bottom:2px solid #2f3d5c;padding-bottom:.5em}
+.ghead .gtitle b{display:block;font-size:1.35em;font-weight:800;letter-spacing:-.02em}
+.ghead .gtitle>span{display:block;margin-top:.35em;font-size:.78em;color:var(--dim);
+ font-weight:600;line-height:1.5;font-variant-numeric:tabular-nums}
+.gsrc{font-size:.88em;font-weight:700;letter-spacing:.06em;color:#4a5878}
+.gthr{display:grid;grid-template-columns:minmax(0,1fr) 4em 4em;gap:.25em;
+ margin-top:.6em;align-items:end}
+.gth{display:flex;flex-direction:column;align-items:center;gap:.1em}
+.gth img{width:1.75em;height:1.75em;object-fit:contain}
+.gth b{font-size:.8em;font-weight:800;letter-spacing:.04em}
+.gth i{font-style:normal;font-size:1.2em;font-weight:800;color:var(--dim);
  font-variant-numeric:tabular-nums}
-.gth.w i{color:var(--ink)}
-.gth small{font-size:8px;font-weight:700;letter-spacing:.08em;color:#4a5878}
-.gtab{margin-top:6px}
-.gr{display:grid;grid-template-columns:minmax(0,1fr) 52px 52px;gap:3px;
- align-items:baseline;padding:2.5px 4px;border-radius:3px}
+.gth small{font-size:.62em;font-weight:700;letter-spacing:.08em;color:#4a5878}
+.gtab{margin-top:.5em}
+.gr{display:grid;grid-template-columns:minmax(0,1fr) 4em 4em;gap:.25em;
+ align-items:baseline;padding:.44em .4em;border-radius:4px}
 .gr:nth-of-type(even){background:rgba(255,255,255,.028)}
-.gr .gl{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:-.03em;
- line-height:1.3}
-.gr .gv{text-align:right;font-size:11.5px;font-weight:700;color:var(--ink);
- font-variant-numeric:tabular-nums;line-height:1.3;white-space:nowrap}
-.gr.lv-m .gl{font-size:11.5px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
-.gr.lv-m .gv{font-size:12.5px;font-weight:800}
-.gr.lv-s .gl{padding-left:9px;font-size:10.5px;color:var(--dim)}
-.gr.lv-s .gv{font-size:11px;font-weight:700;color:#c3cddf}
+.gr .gl{font-size:.98em;font-weight:600;color:var(--dim);letter-spacing:-.03em;
+ line-height:1.35}
+/* "13-103"·"24/32" 처럼 붙임표가 든 값은 그냥 두면 붙임표에서 줄이 갈립니다. */
+.gr .gv{text-align:right;font-size:1.02em;font-weight:700;color:var(--ink);
+ font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap}
+.gr.lv-m .gl{font-size:1.05em;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.gr.lv-m .gv{font-size:1.12em;font-weight:800}
+.gr.lv-s .gl{padding-left:.7em;font-size:.9em;color:var(--dim)}
+.gr.lv-s .gv{font-size:.95em;font-weight:700;color:#c3cddf}
 /* 나은 쪽만 빨강 — 보드와 같은 #ff4d4f 입니다. 나은 쪽이 없는 항목은
    양쪽 다 색을 안 넣습니다. */
 .gr .gv.on{color:#ff4d4f}
-.gr.xhd{margin-top:12px;border-top:1px solid #243049;border-radius:0;
- padding-top:10px;background:none!important}
-.gr.xhd .gl{font-size:9.5px;font-weight:700;letter-spacing:.02em;color:#4a5878}
-.gnpn{margin-top:9px;font-size:10.5px;color:var(--dim);line-height:1.55}
+.gr.xhd{margin-top:.9em;border-top:1px solid #243049;border-radius:0;
+ padding-top:.8em;background:none!important}
+.gr.xhd .gl{font-size:.75em;font-weight:700;letter-spacing:.02em;color:#4a5878}
+.gnpn{margin-top:.8em;font-size:.78em;color:var(--dim);line-height:1.6}
 .gnpn b{color:#c3cddf;font-weight:700}
-/* 리뷰 칸 — 이 페이지의 본문입니다. 글이 없으면 지어내지 않고 조용히 비웁니다. */
-.rvw{font-size:15px;line-height:1.85;color:#d6dded}
+/* 리뷰 칸 — 이 페이지의 본문입니다. 남는 폭은 전부 여기로 오고, 글자도 표보다
+   한 단계 큽니다. 글이 없으면 지어내지 않고 조용히 비웁니다. */
+.rvw{font-size:1.14em;line-height:1.85;color:#d6dded}
 .rvw>*:first-child{margin-top:0}
-.rvw p{margin:0 0 15px}
-.rvw h1{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--ink);
- margin:26px 0 11px}
-.rvw h2{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);
- margin:24px 0 10px}
-.rvw h3{font-size:16.5px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
- margin:20px 0 9px}
-.rvw h4{font-size:15px;font-weight:800;color:#c3cddf;margin:18px 0 8px}
-.rvw ul,.rvw ol{margin:0 0 15px;padding-left:22px}
-.rvw li{margin-bottom:5px}
+.rvw p{margin:0 0 .95em}
+.rvw h1{font-size:1.45em;font-weight:800;letter-spacing:-.02em;color:var(--ink);
+ margin:1.5em 0 .6em}
+.rvw h2{font-size:1.26em;font-weight:800;letter-spacing:-.02em;color:var(--ink);
+ margin:1.4em 0 .55em}
+.rvw h3{font-size:1.1em;font-weight:800;letter-spacing:-.01em;color:var(--ink);
+ margin:1.25em 0 .5em}
+.rvw h4{font-size:1em;font-weight:800;color:#c3cddf;margin:1.15em 0 .45em}
+.rvw ul,.rvw ol{margin:0 0 .95em;padding-left:1.5em}
+.rvw li{margin-bottom:.3em}
 .rvw strong{color:var(--ink);font-weight:800}
 .rvw em{color:#c3cddf}
 .rvw code{background:var(--card);border:1px solid var(--line);border-radius:4px;
- padding:1px 5px;font-size:13px}
-.rvw blockquote{margin:0 0 15px;padding:2px 0 2px 14px;border-left:3px solid var(--acc);
- color:var(--dim)}
-.rvw hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+ padding:1px .35em;font-size:.86em}
+.rvw blockquote{margin:0 0 .95em;padding:.1em 0 .1em .9em;
+ border-left:3px solid var(--acc);color:var(--dim)}
+.rvw hr{border:0;border-top:1px solid var(--line);margin:1.4em 0}
 .rvw a{color:#7ea8ff}
-.rvnone{color:#4a5878;font-size:13.5px;font-weight:600;line-height:1.7;
- border:1px dashed var(--line);border-radius:8px;padding:20px 18px}
+.rvnone{color:#4a5878;font-size:.92em;font-weight:600;line-height:1.7;
+ border:1px dashed var(--line);border-radius:8px;padding:1.4em 1.2em}
 /* 좁은 화면 — 세 칸을 목록 → 박스스코어 → 리뷰 순서로 쌓습니다. 폭이 남으니
-   눌러 두었던 글자와 값 칸을 도로 키웁니다. */
+   기준 글자를 한 단계 더 키우고 값 칸도 넓힙니다. 안쪽 크기는 전부 em 이라
+   여기서 다시 적을 것이 거의 없습니다. */
 @media(max-width:1300px){
-  .wcols{grid-template-columns:minmax(0,1fr);gap:26px}
-  .glist{max-height:340px;overflow:auto}
-  .gthr,.gr{grid-template-columns:minmax(0,1fr) 76px 76px}
-  .gr{padding:3.5px 8px}
-  .gr .gl{font-size:13px}
-  .gr .gv{font-size:13.5px}
-  .gr.lv-m .gl{font-size:13.5px}
-  .gr.lv-m .gv{font-size:15px}
-  .gr.lv-s .gl{padding-left:14px;font-size:12.5px}
-  .gr.lv-s .gv{font-size:13px}
-  .gth img{width:28px;height:28px}
-  .gth b{font-size:12px}
-  .gth i{font-size:18px}
-  .gnpn{font-size:11.5px}
-  .grow{padding:5px 8px}
-  .grow .gs img{width:18px;height:18px}
-  .grow .gs b{font-size:12.5px}
-  .grow .gs i{font-size:13.5px;min-width:17px}
-  .grow .gw{font-size:11px}
+  .wrap.wide{padding-left:20px;padding-right:20px}
+  .wcols{grid-template-columns:minmax(0,1fr);gap:30px;font-size:14.5px}
+  .glist{max-height:26em;overflow:auto}
+  .gthr,.gr{grid-template-columns:minmax(0,1fr) 5.4em 5.4em}
+  .gr{padding:.4em .6em}
 }
 @media(max-width:640px){
-  .wcols{gap:22px}
-  .gthr,.gr{grid-template-columns:minmax(0,1fr) 58px 58px}
-  .gr .gl{font-size:12px}
-  .gr .gv{font-size:12.5px}
-  .gr.lv-m .gl{font-size:12.5px}
-  .gr.lv-m .gv{font-size:13.5px}
-  .ghead .gtitle b{font-size:17px}
-  .rvw{font-size:14.5px}
+  .wcols{gap:24px;font-size:13.5px}
+  .gthr,.gr{grid-template-columns:minmax(0,1fr) 4.4em 4.4em}
 }
