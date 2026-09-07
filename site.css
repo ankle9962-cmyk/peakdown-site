@@ -132,7 +132,9 @@ td.pos{color:var(--dim);font-weight:600}
    같이 커지고 같이 작아집니다. 그래서 위계(머리글 > 큰 줄 > 보통 줄 > 세부
    줄)가 어느 폭에서나 그대로 유지됩니다. 1366px 에서 12.5px, 1920px 에서
    15px, 그보다 넓으면 16px 에서 멈춥니다. */
-.wrap.wide{max-width:none;padding-left:28px;padding-right:28px}
+.wrap.wide{max-width:none;padding:24px 28px 56px}
+.wrap.wide .phd{padding-bottom:12px;margin-bottom:16px}
+.wrap.wide .pick{margin-bottom:14px}
 .wcols{display:grid;grid-template-columns:min(18%,400px) min(25%,520px) minmax(0,1fr);
  gap:22px;align-items:start;
  font-size:clamp(12.5px,calc(0.45vw + 6.3px),16px)}
@@ -164,14 +166,11 @@ td.pos{color:var(--dim);font-weight:600}
    줄 높이는 세로로 넉넉히 벌립니다(줄당 2.2em) — 25줄이면 머리글·각주까지
    합쳐 1080px 화면을 거의 다 채웁니다. 값 두 칸은 4em 고정이라 가장 긴
    "13-103" 이 들어가고, 남는 폭은 전부 라벨이 가져갑니다. */
-.ghead{border-bottom:2px solid #2f3d5c;padding-bottom:.5em}
-.ghead .gtitle b{display:block;font-size:1.35em;font-weight:800;letter-spacing:-.02em}
-.ghead .gtitle>span{display:block;margin-top:.35em;font-size:.78em;color:var(--dim);
- font-weight:600;line-height:1.5;font-variant-numeric:tabular-nums}
-.gsrc{font-size:.88em;font-weight:700;letter-spacing:.06em;color:#4a5878}
-.gthr{display:grid;grid-template-columns:minmax(0,1fr) 4em 4em;gap:.25em;
- margin-top:.6em;align-items:end}
-.gth{display:flex;flex-direction:column;align-items:center;gap:.1em}
+/* 팀 머리는 표 왼쪽 끝에 붙습니다 — 아래 기록 줄의 라벨과 같은 선(.gr 의
+   가로 여백 .4em)에서 시작합니다. 값 칸 위에 가운데로 얹지 않습니다. */
+.ghead{border-bottom:2px solid #2f3d5c;padding-bottom:.55em}
+.gthr{display:flex;gap:1.7em;align-items:flex-end;padding-left:.4em}
+.gth{display:flex;flex-direction:column;align-items:flex-start;gap:.1em}
 .gth img{width:1.75em;height:1.75em;object-fit:contain}
 .gth b{font-size:.8em;font-weight:800;letter-spacing:.04em}
 .gth i{font-style:normal;font-size:1.2em;font-weight:800;color:var(--dim);
@@ -229,10 +228,17 @@ td.pos{color:var(--dim);font-weight:600}
   .wrap.wide{padding-left:20px;padding-right:20px}
   .wcols{grid-template-columns:minmax(0,1fr);gap:30px;font-size:14.5px}
   .glist{max-height:26em;overflow:auto}
-  .gthr,.gr{grid-template-columns:minmax(0,1fr) 5.4em 5.4em}
-  .gr{padding:.4em .6em}
+  .gr{grid-template-columns:minmax(0,1fr) 5.4em 5.4em;padding:.4em .6em}
+  /* 팀 머리의 왼쪽 선은 아래 라벨의 왼쪽 선과 같아야 합니다 — .gr 의 가로
+     여백이 여기서 .6em 으로 바뀌므로 .gthr 도 같이 따라갑니다. */
+  .gthr{padding-left:.6em}
+}
+/* 960px 아래로는 햄버거가 다시 뜹니다 — 그만큼 위를 비워 둡니다. */
+@media(max-width:959px){
+  .wrap.wide{padding-top:56px}
 }
 @media(max-width:640px){
+  .wrap.wide{padding:56px 12px 56px}
   .wcols{gap:24px;font-size:13.5px}
-  .gthr,.gr{grid-template-columns:minmax(0,1fr) 4.4em 4.4em}
+  .gr{grid-template-columns:minmax(0,1fr) 4.4em 4.4em}
 }
