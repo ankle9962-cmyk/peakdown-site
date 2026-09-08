@@ -26,16 +26,19 @@ body.hm{--mark:#c60c30;background:var(--bg)}
    의도한 그래픽 요소로 읽히게 하려는 배치입니다. position:fixed 라 본문
    흐름을 한 픽셀도 밀지 않고, z-index 0 이라 사이드바(200) 아래입니다. */
 .hmbg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-/* 상자는 화면 안에 두고 이미지를 상자보다 크게 그려 오른쪽을 잘라냅니다.
-   음수 right 로 밀어내면 fixed 안에서 overflow:hidden 으로 감싸도 문서
-   스크롤 폭이 늘어나 390px 에서 가로 스크롤이 실제로 생겼습니다(scrollX 26). */
-.hmlogo{position:absolute;top:50%;right:0;translate:0 -50%;
- height:min(84vh,68vw);width:min(42vh,34vw);
- background-repeat:no-repeat;background-size:auto 100%;
- background-position:left center;
+/* 화면 한가운데. 상자는 정사각이고 contain 이라 공이 잘리지 않고 통째로
+   들어옵니다. 원본 PNG 는 공 둘레에 투명 여백이 있어서(가로 72%·세로 62%만
+   차지) 그 여백이 곧 사방 여백이 됩니다.
+   폭을 55vw 로 묶은 이유: 960px 위에서는 사이드바가 264px 를 덮고 있는데,
+   더 키우면 좁은 데스크톱(약 960~1100px)에서 공 왼쪽이 사이드바 뒤로
+   들어가 잘려 보입니다. 55vw 면 어느 폭에서도 공이 사이드바를 넘지 않습니다. */
+.hmlogo{position:absolute;top:50%;left:50%;translate:-50% -50%;
+ width:min(88vh,55vw);aspect-ratio:1;
+ background-repeat:no-repeat;background-size:contain;
+ background-position:center;
  /* 흐리게 빼는 건 취향이 아니라 필요입니다 — 로고 안에 "픽다운" 글자가
     들어 있어서, 또렷하게 두면 워드마크 옆에 두 번째 제목처럼 읽힙니다. */
- filter:grayscale(1) brightness(1.25) contrast(.6) blur(4px);opacity:.075}
+ filter:grayscale(1) brightness(1.25) contrast(.6) blur(6px);opacity:.06}
 .wrap.home{position:relative;z-index:1;max-width:1180px;
  padding:clamp(48px,9vh,104px) clamp(20px,4vw,56px) 72px}
 
@@ -90,7 +93,8 @@ body.hm{--mark:#c60c30;background:var(--bg)}
 .lw a:hover,.lw a:focus-visible{color:var(--ink);border-bottom-color:var(--mark)}
 
 @media(max-width:960px){
-  .hmlogo{height:min(58vh,96vw);width:min(30vh,48vw);opacity:.06}
+  /* 사이드바가 서랍으로 빠져 화면을 다 쓰므로 폭 제한을 풉니다. */
+  .hmlogo{width:min(80vh,88vw);opacity:.05}
   /* 사이드바가 빠져 본문이 화면 전체를 쓰므로 비율을 다시 잡습니다. */
   .wm{font-size:min(11.2vw,120px)}
   .wrap.home{padding-top:74px}
