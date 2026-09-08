@@ -19,3 +19,10 @@ Thumbs.db
 desktop.ini
 *.swp
 *~
+
+# 로컬 편집 도구 — 사이트에 나가는 물건이 아닙니다.
+# deploy.sh 는 이것들을 site/ 로 옮기지 않지만, 실수로 들어와도 커밋되지 않게
+# 여기서 한 번 더 막습니다.
+admin.py
+collect_news.py
+content/

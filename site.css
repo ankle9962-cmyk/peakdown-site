@@ -152,6 +152,38 @@ td.dif{font-weight:700}
   .divbox th,.divbox td{padding:7px 7px;font-size:12.5px}
 }
 
+/* ── 주요 뉴스 ───────────────────────────────────────────────────────────
+   한 항목이 카드 하나입니다. 맨 아래 출처 줄(.nwcr)은 장식이 아니라 조건이라
+   본문과 같은 템플릿에서 같이 나옵니다 — 이 줄 없이 나가는 항목은 없습니다. */
+.nw{background:var(--board);border:1px solid var(--line);border-radius:10px;
+ padding:20px 22px;margin:0 0 16px}
+.nwt{font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.45}
+.nwm{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:6px 0 14px;
+ font-size:12.5px;color:var(--dim);font-weight:600}
+.nwm time{font-variant-numeric:tabular-nums}
+.nwlink{color:#7aa2f7;text-decoration:none;font-weight:700}
+.nwlink:hover{text-decoration:underline}
+.nwb{font-size:15px;line-height:1.8}
+.nwb p{margin:0 0 .85em}
+.nwb p:last-child{margin-bottom:0}
+.nwb h2,.nwb h3,.nwb h4{font-weight:800;letter-spacing:-.01em;margin:1.1em 0 .4em}
+.nwb h2{font-size:17px} .nwb h3{font-size:15.5px} .nwb h4{font-size:14.5px}
+.nwb ul,.nwb ol{margin:0 0 .85em 1.35em}
+.nwb li{margin:.2em 0}
+.nwb blockquote{border-left:3px solid var(--line);padding-left:14px;color:var(--dim);
+ margin:0 0 .85em}
+.nwb code{background:var(--card);border-radius:4px;padding:1px 5px;font-size:13px}
+.nwb a{color:#7aa2f7}
+.nwcr{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);
+ font-size:12.5px;color:var(--dim);line-height:1.65}
+.nwcr a{color:var(--dim);text-decoration:underline}
+.nwcr a:hover{color:var(--ink)}
+@media(max-width:640px){
+  .nw{padding:16px 15px}
+  .nwt{font-size:17px}
+  .nwb{font-size:14.5px}
+}
+
 /* ── 주차별 자료 ─────────────────────────────────────────────────────────
    왼쪽부터 [경기 목록][박스스코어][리뷰] 세 칸입니다. 목록 칸은 제 내용
    폭(fit-content)에 딱 맞춰 섭니다 — 예전 18% 규칙은 1920px 에서 288px 을
