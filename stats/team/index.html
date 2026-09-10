@@ -18,6 +18,7 @@
   <span class="sub">정규시즌 · 32팀 순위</span><span class="cnt" id="cnt"></span></div>
 <div class="pick"><label for="season">시즌</label><select id="season"></select></div>
 <div class="tabs" id="tabs" role="tablist"></div>
+<div class="early" id="early" hidden></div>
 <div id="out"></div>
 <p class="note" style="margin-top:18px">순위는 그 시즌 리그 전체에서 매깁니다.
   칸마다 좋은 쪽이 1위입니다 — 실점·허용야드는 적을수록, 색·테이크어웨이는
@@ -56,7 +57,7 @@ const R=(typeof window.TEAM_SEASON_RANKS!=="undefined")?window.TEAM_SEASON_RANKS
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sel=document.getElementById("season"), out=document.getElementById("out"),
       cnt=document.getElementById("cnt"), tabs=document.getElementById("tabs"),
-      gap=document.getElementById("gap");
+      gap=document.getElementById("gap"), early=document.getElementById("early");
 let tab=0, sort={k:TABS[0].d,dir:1};
 sel.innerHTML=SEASONS.map(y=>`<option value="${y}">${y}</option>`).join("");
 const withData=SEASONS.filter(y=>R&&R.seasons[String(y)]);
@@ -79,6 +80,16 @@ function rankOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i+
 function valOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i]; }
 function draw(){
   const y=sel.value, rows=R&&R.seasons[y];
+  // 순위를 보류한 시즌(시즌 초) — {팀: 치른 경기 수}. 없으면 순위가 있는 시즌.
+  const un=R&&R.unranked&&R.unranked[y];
+  early.hidden=!(rows&&un);
+  if(rows&&un){
+    const g=Object.values(un), n=g.filter(x=>x>0).length;
+    early.innerHTML=`<b>${esc(y)} 시즌 진행 중 — 경기를 치른 팀 ${n}곳 · 팀당 최다 `
+      +`${Math.max(...g)}경기.</b> 한두 경기로 매긴 순위는 순위가 아니라서, 모든 팀이 `
+      +`${esc(R.min_gp)}경기를 치를 때까지 순위 표시를 달지 않습니다. 줄 순서는 값 `
+      +`순서일 뿐 순위가 아닙니다. 0-0 팀은 아직 경기를 치르지 않은 팀이라 기록이 —입니다.`;
+  }
   if(!rows){
     cnt.textContent=""; gap.textContent="";
     out.innerHTML=`<div class="pending">${esc(y)} 시즌 개막 후 집계됩니다</div>`;
@@ -89,6 +100,17 @@ function draw(){
   list.sort((a,b)=>{
     if(sort.k==="t") return sort.dir*a.localeCompare(b);
     const ra=rankOf(rows,a,sort.k), rb=rankOf(rows,b,sort.k);
+    // 순위를 보류한 시즌은 값 순서로만 세웁니다 — 좋은 쪽이 위(방향은 자료 파일).
+    // 순위가 있는 시즌에는 값만 있고 순위가 없는 칸이 없어서 이 길을 안 탑니다.
+    if(ra==null&&rb==null){
+      const va=valOf(rows,a,sort.k), vb=valOf(rows,b,sort.k);
+      if(va!=null&&vb!=null&&va!==vb){
+        const hi=((R.dir||{})[dataKey(sort.k)]||"HIGH")==="HIGH";
+        return sort.dir*(hi?vb-va:va-vb);
+      }
+      if(va!=null&&vb==null) return -1;
+      if(va==null&&vb!=null) return 1;
+    }
     // 자료가 없는 칸은 방향과 무관하게 항상 아래로 보냅니다.
     if(ra==null&&rb==null) return a.localeCompare(b);
     if(ra==null) return 1;

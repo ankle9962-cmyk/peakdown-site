@@ -20,6 +20,7 @@
   <div class="pick"><label for="season">시즌</label><select id="season"></select></div>
   <div class="tabs" id="tabs" role="tablist"></div>
 </div>
+<div class="early" id="early" hidden></div>
 <div id="out"></div>
 <p class="note" id="qual" style="margin-top:18px"></p>
 <p class="note" id="gap"></p>
@@ -63,7 +64,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const sel=document.getElementById("season"), out=document.getElementById("out"),
       cnt=document.getElementById("cnt"), qual=document.getElementById("qual"),
       tabs=document.getElementById("tabs"), gap=document.getElementById("gap"),
-      note=document.getElementById("defnote");
+      note=document.getElementById("defnote"), early=document.getElementById("early");
 const KEYS=Object.keys(CATS);
 let tab=KEYS[0];                       // 패스가 기본
 const sort={};                         // 부문마다 정렬 상태를 따로 둡니다
@@ -87,6 +88,15 @@ function draw(){
   const y=sel.value, s=P&&P.seasons[y];
   const [lb,,cols]=CATS[tab];
   note.style.display = (tab==="def") ? "block" : "none";
+  // 진행 중인 시즌 — 치른 경기 수와 비례로 줄인 자격 기준을 먼저 말합니다.
+  const pt=s&&P.partial&&P.partial[y], qb=(P.qual_by||{})[y];
+  early.hidden=!pt;
+  if(pt) early.innerHTML=`<b>${esc(y)} 시즌 진행 중 — 팀당 최다 ${pt.gp}경기 `
+    +`(정규시즌 ${pt.of}경기 중).</b> 시즌 전체 기준을 그대로 걸면 아무도 넘지 못해, `
+    +`자격 기준을 치른 경기 수에 비례해 줄였습니다(`
+    +KEYS.map(k=>`${esc(CATS[k][0])} ${P.qual[k].min}→${qb[k]}${esc(UNIT[k]||"")}`).join(" · ")
+    +`). 한두 경기 기록이라 순서에 큰 의미는 없습니다. 아직 경기를 치르지 않은 팀의 `
+    +`선수는 표에 없습니다.`;
   if(!s){
     cnt.textContent=""; qual.textContent=""; gap.textContent="";
     out.innerHTML=`<div class="pending">${esc(y)} 시즌 개막 후 집계됩니다</div>`;
@@ -124,7 +134,7 @@ function draw(){
       +`</tr>`).join("")
     +`</tbody></table></div>`;
   cnt.textContent=`${rows.length}명`;
-  const q=P.qual[tab], u=UNIT[tab]||"";
+  const q={...P.qual[tab], ...(qb&&qb[tab]!=null?{min:qb[tab]}:{})}, u=UNIT[tab]||"";
   qual.textContent = (tab==="def")
     ? `자격 ${q.min}${u} 이상 · 칸마다 상위 ${P.deftop}명을 모아 싣습니다`
       +` — 어느 칸으로 정렬해도 그 칸 1위가 표 안에 있습니다.`
