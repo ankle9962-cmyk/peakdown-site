@@ -53,6 +53,23 @@
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const REVIEWS={};
 
+function ytActivate(root){
+  const rm=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+  (root||document).querySelectorAll(".yt-loop[data-yt-src]:not([data-yt-on])").forEach(el=>{
+    el.setAttribute("data-yt-on","");
+    const play=()=>{
+      const f=document.createElement("iframe");
+      f.src=el.getAttribute("data-yt-src");f.title="YouTube";
+      f.setAttribute("allow","autoplay; encrypted-media; picture-in-picture");
+      f.setAttribute("referrerpolicy","strict-origin-when-cross-origin");
+      el.replaceChildren(f);
+    };
+    if(!rm){play();return;}
+    const a=el.querySelector(".yt-poster");
+    if(a) a.addEventListener("click",e=>{e.preventDefault();play();});
+  });
+}
+
 // ── 경기 결과 ─────────────────────────────────────────────────────────────
 // ESPN summary 의 boxscore.teams[i].statistics[] 를 매치업 표로 그립니다.
 // 줄과 순서는 아래 표가 정하고 숫자는 응답이 정합니다 — name 으로 항목을 찾아
@@ -243,6 +260,7 @@ function gReview(g){
   if(hd) hd.textContent=g?`${g.away.ab} @ ${g.home.ab}`:"";
   const html=g?REVIEWS[g.id]:null;
   box.innerHTML=html||`<div class="rvnone">이 경기의 리뷰는 아직 없습니다.</div>`;
+  if(html) ytActivate(box);             // 반복 클립(유튜브 loop) 켜기
 }
 
 async function gShow(id){
