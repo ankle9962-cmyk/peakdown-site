@@ -130,6 +130,38 @@ td .rk.hot{color:var(--hot)}
  border:1px solid rgba(255,77,79,.35);border-radius:6px;padding:2px 8px;
  font-size:13px;font-weight:600}
 .yterr code{background:transparent;color:inherit;padding:0}
+/* ── 본문 속 표 ──────────────────────────────────────────────────────── */
+.mdtw{overflow-x:auto;max-width:100%;margin:0 0 1em;background:var(--board);
+ border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}
+/* 크기는 둘레 글에 붙여 정합니다(.95em) — 재 보면 사이트 리뷰 칸에서 14.6px 이고,
+   옆에 선 박스스코어 값(15.1px)·팀 스탯 표(14.5px)와 같은 덩치입니다. 편집 화면
+   미리보기와 검토 파일은 "사이트에 나가는 모양"을 보여 주는 자리라 같은 비율을
+   씁니다(그쪽 박스스코어 칸은 12.5px 짜리 도구 화면이라 기준으로 삼지 않습니다).
+   em 은 겹쳐 곱해지므로 크기는 표에 한 번만 겁니다. 앞줄의 px 은 max() 를 모르는
+   옛 브라우저용 예비값입니다. */
+.mdt{width:100%;margin:0;border-collapse:collapse;line-height:1.5;
+ font-variant-numeric:tabular-nums;font-size:14px;font-size:max(12px,.95em)}
+.mdt th,.mdt td{padding:7px 12px;text-align:left;white-space:nowrap;
+ font-size:inherit;border-bottom:1px solid rgba(36,48,73,.5)}
+.mdt thead th{position:static;top:auto;z-index:auto;cursor:default;user-select:auto;
+ background:none;font-size:.88em;font-weight:800;letter-spacing:.04em;
+ color:var(--dim);border-bottom:1px solid var(--line)}
+.mdt tbody tr:nth-child(even){background:rgba(255,255,255,.028)}
+.mdt tbody tr:last-child td{border-bottom:0}
+.mdt td{color:#c3cddf;font-weight:600}
+.mdt td:first-child{color:var(--ink);font-weight:700}
+.mdt .l{text-align:left}
+.mdt .c{text-align:center}
+.mdt .r{text-align:right}
+.mdt a{color:#7ea8ff}
+.mdt strong{color:var(--ink);font-weight:800}
+.mderr{display:inline-block;background:rgba(255,77,79,.10);color:var(--hot);
+ border:1px solid rgba(255,77,79,.35);border-radius:6px;padding:2px 8px;
+ font-size:13px;font-weight:600}
+.mderr code{background:transparent;color:inherit;padding:0;white-space:pre-wrap}
+@media(max-width:640px){
+  .mdt th,.mdt td{padding:6px 9px}
+}
 td.pos{color:var(--dim);font-weight:600}
 .cnt{color:var(--dim);font-size:13px;font-weight:600;margin-left:auto}
 /* 선수 스탯 — 시즌 선택 옆에 부문 탭을 붙입니다. 좁아지면 탭이 아래로
