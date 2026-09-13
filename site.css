@@ -250,6 +250,49 @@ td.dif{font-weight:700}
   .nwb{font-size:14.5px}
 }
 
+/* ── 칼럼/분석 ───────────────────────────────────────────────────────────
+   목록은 한 줄에 한 편(제목·날짜·발췌)이고, 본문은 제 주소를 가진 한 장입니다.
+   주요 뉴스 카드와 같은 말투를 쓰되 출처 줄이 없습니다 — 칼럼은 픽다운이 쓴
+   글이라 원문이 따로 없습니다. */
+.cols{display:grid;gap:14px}
+.cl{background:var(--board);border:1px solid var(--line);border-radius:10px;
+ padding:18px 22px;text-decoration:none;color:inherit;display:block;
+ border-left:3px solid transparent}
+.cl:hover,.cl:focus-visible{border-left-color:var(--acc);background:#141b2d}
+.cl h2{font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.45;
+ color:var(--ink)}
+.cl time{display:block;margin:5px 0 9px;font-size:12.5px;color:var(--dim);
+ font-weight:600;font-variant-numeric:tabular-nums}
+.cl p{font-size:14.5px;line-height:1.75;color:var(--dim);margin:0}
+/* 한 편 보기 */
+.cpost{background:var(--board);border:1px solid var(--line);border-radius:10px;
+ padding:26px 30px}
+.cpost h1{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.4;
+ color:var(--ink)}
+.cpost .cmeta{margin:8px 0 20px;padding-bottom:16px;border-bottom:1px solid var(--line);
+ font-size:13px;color:var(--dim);font-weight:600;font-variant-numeric:tabular-nums}
+.cbody{font-size:15.5px;line-height:1.85}
+.cbody p{margin:0 0 .95em}
+.cbody p:last-child{margin-bottom:0}
+.cbody h2,.cbody h3,.cbody h4{font-weight:800;letter-spacing:-.01em;margin:1.3em 0 .5em;
+ color:var(--ink)}
+.cbody h2{font-size:19px} .cbody h3{font-size:17px} .cbody h4{font-size:15.5px}
+.cbody ul,.cbody ol{margin:0 0 .95em 1.35em}
+.cbody li{margin:.2em 0}
+.cbody blockquote{border-left:3px solid var(--line);padding-left:14px;color:var(--dim);
+ margin:0 0 .95em}
+.cbody code{background:var(--card);border-radius:4px;padding:1px 5px;font-size:13.5px}
+.cbody a{color:#7aa2f7}
+.cback{display:inline-block;margin-top:22px;font-size:13.5px;font-weight:700;
+ color:var(--dim);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px}
+.cback:hover{color:var(--ink);border-bottom-color:var(--acc)}
+@media(max-width:640px){
+  .cl{padding:15px 16px}
+  .cpost{padding:18px 16px}
+  .cpost h1{font-size:21px}
+  .cbody{font-size:15px}
+}
+
 /* ── 주차별 자료 ─────────────────────────────────────────────────────────
    왼쪽부터 [경기 목록][박스스코어][리뷰] 세 칸입니다. 목록 칸은 제 내용
    폭(fit-content)에 딱 맞춰 섭니다 — 예전 18% 규칙은 1920px 에서 288px 을
