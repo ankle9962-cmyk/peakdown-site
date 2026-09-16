@@ -421,19 +421,22 @@ td.dif{font-weight:700}
   body.wk .glist{padding-right:9px}
   body.wk .rvw{padding-right:14px}
   body.wk .gbox{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-  body.wk .gbox>.ghead,body.wk .gbox>.gnpn,body.wk .gbox>.gnote{flex:none}
-  body.wk .gbox>.gtab{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:9px}
+  body.wk .gbox>.ghead,body.wk .gbox>.gnote{flex:none}
+  /* 구르는 칸은 접이식 두 칸을 담은 .bsecs 입니다 — 팀 머리만 붙박이로 두고
+     그 아래가 통째로 구릅니다. 예전에는 .gtab 이 바로 자식이라 그게 구르는
+     칸이었는데, 표가 칸 안으로 한 겹 들어가면서 바뀌었습니다. */
+  body.wk .gbox>.bsecs{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:9px}
   /* 막대는 어두운 배경에 묻히게 가늘게 둡니다. */
-  body.wk .glist,body.wk .rvw,body.wk .gbox>.gtab{
+  body.wk .glist,body.wk .rvw,body.wk .gbox>.bsecs{
    scrollbar-width:thin;scrollbar-color:#2a3550 transparent}
   body.wk .glist::-webkit-scrollbar,body.wk .rvw::-webkit-scrollbar,
-  body.wk .gbox>.gtab::-webkit-scrollbar{width:7px}
+  body.wk .gbox>.bsecs::-webkit-scrollbar{width:7px}
   body.wk .glist::-webkit-scrollbar-track,body.wk .rvw::-webkit-scrollbar-track,
-  body.wk .gbox>.gtab::-webkit-scrollbar-track{background:transparent}
+  body.wk .gbox>.bsecs::-webkit-scrollbar-track{background:transparent}
   body.wk .glist::-webkit-scrollbar-thumb,body.wk .rvw::-webkit-scrollbar-thumb,
-  body.wk .gbox>.gtab::-webkit-scrollbar-thumb{background:#2a3550;border-radius:4px}
+  body.wk .gbox>.bsecs::-webkit-scrollbar-thumb{background:#2a3550;border-radius:4px}
   body.wk .glist::-webkit-scrollbar-thumb:hover,body.wk .rvw::-webkit-scrollbar-thumb:hover,
-  body.wk .gbox>.gtab::-webkit-scrollbar-thumb:hover{background:#3a4767}
+  body.wk .gbox>.bsecs::-webkit-scrollbar-thumb:hover{background:#3a4767}
 }
 /* 좁은 화면 — 세 칸을 목록 → 박스스코어 → 리뷰 순서로 쌓습니다. 폭이 남으니
    기준 글자를 한 단계 더 키우고 값 칸도 넓힙니다. 안쪽 크기는 전부 em 이라
@@ -458,3 +461,43 @@ td.dif{font-weight:700}
   .wcols{gap:24px;font-size:13.5px}
   .gr{grid-template-columns:minmax(0,1fr) 4.4em 4.4em}
 }
+
+.bsecs{display:flex;flex-direction:column;gap:.45em;min-width:0}
+.bsec{min-width:0}
+.bsh{display:flex;align-items:center;gap:.35em;padding:.42em .2em;cursor:pointer;
+ font-weight:800;color:var(--ink);border-bottom:1px solid var(--line);
+ -webkit-user-select:none;user-select:none}
+.bsh:hover{color:#7ea8ff}
+.bsh:focus-visible{outline:2px solid #4a5f8f;outline-offset:-2px}
+/* 손잡이는 코치 경력 표와 같은 모양입니다 — 접혀 있으면 ▸, 펴지면 90도 */
+.bchev{display:inline-block;width:.8em;font-size:.82em;color:#5b6880;
+ transition:transform .12s ease}
+.bsh[aria-expanded="true"] .bchev{transform:rotate(90deg)}
+.bsh .bcnt{margin-left:auto;font-size:.78em;font-weight:700;color:#4a5878;
+ letter-spacing:.02em;white-space:nowrap}
+.bsb{padding-top:.2em}
+.bsb.off{display:none}
+/* 선수 스탯 안쪽 — 팀 한 덩이, 그 안에 접이식 소표들 */
+.pteam{margin:.2em 0 .7em}
+.pteam .pth{display:flex;align-items:center;gap:.35em;padding:.3em .2em .35em}
+.pteam .pth img{width:1.3em;height:1.3em;object-fit:contain;flex:none}
+.pteam .pth b{font-size:.92em;font-weight:800;letter-spacing:.03em;color:var(--ink)}
+.pteam .pth small{font-size:.66em;font-weight:700;letter-spacing:.08em;color:#4a5878}
+.pteam .bsh{font-size:.92em;font-weight:700;padding-left:.5em}
+/* 표 한 장. 이름 칸이 남는 폭을 다 먹고 숫자 칸은 고정입니다. 칸 수가
+   표마다 달라서 --ptpl 로 통째로 받습니다 — repeat(var(--n),…) 은 값이
+   정수여야 해서 브라우저마다 갈리는데, 이렇게 전체 값을 넘기면 안 갈립니다. */
+.ptbl{min-width:0;overflow-x:auto}
+.ptr{display:grid;grid-template-columns:var(--ptpl);gap:.3em;padding:.3em .25em;
+ align-items:baseline;border-bottom:1px solid rgba(36,48,73,.45)}
+.ptr:last-child{border-bottom:0}
+.ptr .pnm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ font-size:.9em;font-weight:600;color:var(--dim)}
+.ptr .ptd{text-align:right;font-size:.9em;font-weight:700;color:var(--ink);
+ font-variant-numeric:tabular-nums;white-space:nowrap}
+.ptr.pthr{border-bottom:1px solid var(--line)}
+.ptr.pthr .ptd{font-size:.72em;font-weight:700;color:#4a5878;letter-spacing:.03em}
+.ptr:nth-child(even):not(.pthr){background:rgba(255,255,255,.022)}
+/* 표 밑에 붙는 잔글씨 — net/gross 같은 주의사항입니다. */
+.pnote{padding:.5em .25em .2em;font-size:.76em;color:var(--dim);line-height:1.6}
+.pnote b{color:#c3cddf;font-weight:700}
