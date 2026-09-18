@@ -185,11 +185,13 @@ const boxUid=()=>"bx"+(++BOXN);
 // 접이식 칸 하나. 여는 상태는 여기서 정하고, 게임을 바꾸면 부르는 쪽이
 // innerHTML 을 새로 그리므로 접힘은 저절로 처음 상태로 돌아갑니다 —
 // 코치 경력 표와 같은 방식이라 따로 기억해 둘 것이 없습니다.
-function boxSec(title,body,open,cnt){
+// lbl 을 주면 제목 대신 그 HTML 을 씁니다(팀 로고·약어처럼 이미 만든 조각).
+// 부르는 쪽이 esc 를 끝낸 문자열만 넘깁니다.
+function boxSec(title,body,open,cnt,lbl){
   const id=boxUid();
   return `<div class="bsec"><div class="bsh" role="button" tabindex="0"
       aria-expanded="${open?"true":"false"}" aria-controls="${id}">
-      <span class="bchev" aria-hidden="true">▸</span><span>${esc(title)}</span>
+      <span class="bchev" aria-hidden="true">▸</span><span class="blb">${lbl||esc(title)}</span>
       ${cnt?`<span class="bcnt">${esc(cnt)}</span>`:""}</div>
     <div class="bsb${open?"":" off"}" id="${id}">${body}</div></div>`;
 }
@@ -234,23 +236,26 @@ function pTable(idx,sec){
   return `<div class="ptbl" style="--ptpl:${tpl}">${head}${body}</div>`
     + (gs.has("passing")?BOX_NPN:"");
 }
-// 선수 스탯 칸 — 원정 먼저, 그다음 홈. 기록이 아예 없으면 빈 문자열을 주고,
-// 부르는 쪽은 그때 칸 자체를 만들지 않습니다(빈 표를 두지 않습니다).
+// 선수 스탯 칸 — 원정 먼저, 그다음 홈. 접는 단위는 팀 하나입니다: 팀을 펴면
+// 그 팀의 표(패싱·러싱·리시빙·수비·킥/펀트)가 제목과 함께 한꺼번에 나옵니다.
+// 표마다 따로 접던 한 단계는 없앴습니다 — 한 팀을 보려고 다섯 번 누르게
+// 되기 때문입니다. 기록이 아예 없으면 빈 문자열을 주고, 부르는 쪽은 그때 칸
+// 자체를 만들지 않습니다(빈 표를 두지 않습니다).
 function boxPlayers(teams){
   let out="";
   for(const t of teams){
     if(!t) continue;
     const idx=pIndex(t.pl);
     if(!idx.size) continue;
-    let subs="";
+    let grps="";
     for(const sec of PSECS){
       const tbl=pTable(idx,sec);
-      if(tbl) subs+=boxSec(sec[0],tbl,false,null);
+      if(tbl) grps+=`<div class="pgrp"><div class="pgh">${esc(sec[0])}</div>${tbl}</div>`;
     }
-    if(!subs) continue;
-    out+=`<div class="pteam"><div class="pth">
-        <img src="${boxLogo(t.ab)}" alt="" onerror="this.style.visibility='hidden'">
-        <b>${esc(t.ab)}</b><small>${t.ha==="home"?"HOME":"AWAY"}</small></div>${subs}</div>`;
+    if(!grps) continue;
+    const lbl=`<img src="${boxLogo(t.ab)}" alt="" onerror="this.style.visibility='hidden'">`
+      + `<b>${esc(t.ab)}</b><small>${t.ha==="home"?"HOME":"AWAY"}</small>`;
+    out+=`<div class="pteam">${boxSec(t.ab,grps,false,null,lbl)}</div>`;
   }
   return out;
 }

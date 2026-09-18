@@ -477,13 +477,16 @@ td.dif{font-weight:700}
  letter-spacing:.02em;white-space:nowrap}
 .bsb{padding-top:.2em}
 .bsb.off{display:none}
-/* 선수 스탯 안쪽 — 팀 한 덩이, 그 안에 접이식 소표들 */
-.pteam{margin:.2em 0 .7em}
-.pteam .pth{display:flex;align-items:center;gap:.35em;padding:.3em .2em .35em}
-.pteam .pth img{width:1.3em;height:1.3em;object-fit:contain;flex:none}
-.pteam .pth b{font-size:.92em;font-weight:800;letter-spacing:.03em;color:var(--ink)}
-.pteam .pth small{font-size:.66em;font-weight:700;letter-spacing:.08em;color:#4a5878}
-.pteam .bsh{font-size:.92em;font-weight:700;padding-left:.5em}
+/* 선수 스탯 안쪽 — 팀마다 접이식 한 덩이, 펴면 표들이 제목과 함께 다 나옵니다 */
+.pteam{margin:.2em 0 .3em}
+.bsh .blb{display:flex;align-items:center;gap:.35em;min-width:0}
+.pteam .bsh img{width:1.3em;height:1.3em;object-fit:contain;flex:none}
+.pteam .bsh b{font-size:.95em;font-weight:800;letter-spacing:.03em}
+.pteam .bsh small{font-size:.66em;font-weight:700;letter-spacing:.08em;color:#4a5878}
+.pgrp{margin:.35em 0 .75em}
+.pgrp:last-child{margin-bottom:.3em}
+.pgh{padding:.2em .25em .25em;font-size:.86em;font-weight:800;color:#c3cddf;
+ letter-spacing:.02em;border-bottom:1px solid var(--line)}
 /* 표 한 장. 이름 칸이 남는 폭을 다 먹고 숫자 칸은 고정입니다. 칸 수가
    표마다 달라서 --ptpl 로 통째로 받습니다 — repeat(var(--n),…) 은 값이
    정수여야 해서 브라우저마다 갈리는데, 이렇게 전체 값을 넘기면 안 갈립니다. */
