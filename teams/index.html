@@ -20,8 +20,16 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
    예전 68px 여백에서 줄인 68px 은 전부 기록 열이 가져갔습니다(480 → 548).
    오른쪽 끝 리시버 카드는 필드 오른쪽 끝에서 14.8px 안쪽에 서므로 보드 가장자리
    까지는 14.8 + 34 = 48.8px 이 남습니다(예전 82.8px). */
+/* 배치는 탭마다 같습니다 — [탭 줄(전폭)] · [팀 이름 + 시즌] · [그 탭의 내용].
+   탭을 바꿔도 위 두 줄은 한 픽셀도 움직이지 않습니다. 세로 여백을 44/44 에서
+   28/24 로 줄인 것은 탭 줄이 왼쪽 열에서 위로 올라오면서 그만큼(36px) 자리를
+   더 쓰기 때문입니다 — 필드(846px)와 코칭스태프 줄은 그대로 둡니다. */
 #board{width:1920px;height:1080px;background:var(--board);position:relative;overflow:hidden;
- padding:44px 34px;display:flex;flex-direction:row;gap:24px;transform-origin:top center}
+ padding:28px 34px 24px;display:flex;flex-direction:column;transform-origin:top center}
+/* 내용 줄 — [기록 열 548px] + 간격 24px + [본문 1280px]. 기록 열을 안 쓰는
+   탭에서는 본문이 전폭을 씁니다. */
+.bd{display:flex;flex-direction:row;gap:24px;flex:1 1 auto;min-height:0;
+ position:relative;z-index:1}
 .tcol{width:548px;flex:none;position:relative;z-index:1;display:flex;flex-direction:column}
 /* 480px 이 되면서 타입 스케일을 예전 대비 약 1.4배로 올렸습니다. 라벨은 전부
    nowrap — 가장 긴 "빅플레이 허용 패스 20+" 도 한 줄에 들어갑니다.
@@ -78,23 +86,13 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
 .tcol .tvl.na{color:var(--dim)}
 /* 시즌 토글 — 기록 열·패스 분석·러닝 분석만 몹니다. 로스터 보드와 선수 패널은
    따로 놉니다. 자료가 없는 시즌은 눌리기는 하되 준비 중 화면을 띄웁니다. */
-.tcol .sbar{display:flex;gap:5px;margin-bottom:6px}
-.tcol .sbtn{flex:1;background:transparent;color:var(--dim);border:1px solid var(--line);
- border-radius:5px;padding:4px 0;font:inherit;font-size:13px;line-height:1.2;
- font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}
-.tcol .sbtn small{display:block;font-size:9px;font-weight:600;letter-spacing:.04em;opacity:.75}
-.tcol .sbtn[data-off]{color:#4a5878}
-.tcol .sbtn[aria-pressed="true"]{background:var(--team-b);color:#fff;border-color:var(--team-b)}
-.tcol .sbtn:hover{color:var(--ink)}
-/* 왼쪽 열 전환 버튼 */
-/* 탭 다섯 개가 548px 한 줄에 들어가야 합니다 — 버튼당 약 105px 이라
-   글자를 14.5 → 12.5px 로 내리고 nowrap 을 걸어 두 줄로 접히지 않게 했습니다. */
-.tcol .cbar{display:flex;gap:4px;margin-bottom:9px}
-.tcol .cbtn{flex:1;background:var(--card);color:var(--dim);border:1px solid var(--line);
+/* 탭 줄 — 판의 맨 위, 전폭. 탭이 여섯 개라 1852px 을 고르게 나눠 씁니다. */
+.cbar{display:flex;gap:4px;margin-bottom:9px;position:relative;z-index:1;flex:none}
+.cbtn{flex:1;background:var(--card);color:var(--dim);border:1px solid var(--line);
  border-radius:5px;padding:5px 2px;font:inherit;font-size:12.5px;line-height:1.2;
  font-weight:700;cursor:pointer;white-space:nowrap;letter-spacing:-.02em}
-.tcol .cbtn[aria-pressed="true"]{background:var(--team-a);color:#fff;border-color:var(--team-a)}
-.tcol .cbtn:hover{color:var(--ink)}
+.cbtn[aria-pressed="true"]{background:var(--team-a);color:#fff;border-color:var(--team-a)}
+.cbtn:hover{color:var(--ink)}
 /* 패스 존 — 위에서 내려다본 필드. 깊이 밴드가 가로 띠로 쌓이고 깊을수록 위쪽,
    포메이션 보드와 같은 방향입니다. 각 띠는 바깥-가운데-바깥 3구간으로 나뉘고
    양쪽 바깥은 같은 존(외곽)이라 색도 하이라이트도 함께 움직입니다. */
@@ -162,12 +160,10 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
    칸마다 따로 구르게 하는 높이 규칙, 그리고 일정 줄의 주 번호·결과 칸.
 
    이 탭에서는 왼쪽 팀 기록 패널·시즌 초 안내·코칭스태프 줄을 안 그립니다
-   (teamCol 과 render 가 아예 만들지 않습니다). 남은 시즌·탭 단추는 자리를
-   지켜야 하므로 보드를 세로 배치로 바꾸고 세 칸이 전폭을 씁니다. */
-#board.schedon{flex-direction:column;gap:0}
-#board.schedon .tcol{width:100%;flex:none}
-#board.schedon .main{flex:1 1 auto;min-height:0}
-#board.schedon .field{height:auto;flex:1 1 auto;min-height:0;margin-top:16px}
+   (render 가 teamPanel 을 아예 부르지 않습니다). 탭 줄과 머리 줄은 다른 탭과
+   똑같은 자리에 그대로 서고, 세 칸이 남는 폭·높이를 전부 씁니다. */
+/* 주차별 성적은 기록 열을 안 쓰므로 세 칸이 남는 높이를 전부 가져갑니다. */
+#board.schedon .field{height:auto;flex:1 1 auto;min-height:0;margin-top:0}
 .schw{position:absolute;inset:0;min-height:0}
 .schw .wcols{height:100%;min-height:0;display:grid;gap:22px;align-items:stretch;
  grid-template-columns:fit-content(19em) minmax(0,430px) minmax(0,1fr);
@@ -320,18 +316,18 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
 .rsel .rcard:not(.on) .pos{background:#2a3550}
 .rsel .rcl{font-size:10.5px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
 .rsel .rcard.on+.rcl,.rsel .rc:has(.on) .rcl{color:var(--ink)}
-.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
 #board::before{content:"";position:absolute;inset:0;pointer-events:none;
  background:repeating-linear-gradient(90deg,transparent 0 159px,rgba(255,255,255,.035) 159px 160px)}
 .head{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--team-a);
- padding-bottom:14px;position:relative;z-index:1}
+ padding-bottom:12px;margin-bottom:14px;position:relative;z-index:1;flex:none}
 .head h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
 .head .season{font-size:13px;font-weight:700;color:var(--team-b);letter-spacing:.14em}
 .head .side{margin-left:auto;font-size:12px;color:var(--dim);letter-spacing:.1em}
 /* 절대 배치 — 카드마다 x(%)·y(px) 를 직접 받습니다. 그래야 오라인만 좁히고
    리시버는 그대로 벌려둘 수 있습니다. 여백(padding)은 절대 배치 자식을 밀지
    못하므로 위 간격은 margin 으로 줍니다. */
-.staff{display:flex;gap:10px;margin-top:12px;position:relative;z-index:1}
+.staff{display:flex;gap:10px;position:relative;z-index:1;flex:none}
 .staff .st{flex:1;background:var(--card);border-left:3px solid var(--team-a);
  border-radius:4px;padding:7px 13px;display:flex;align-items:center;gap:11px}
 /* 코치 사진은 유니폼 스튜디오 컷이 아니라 일반 사진이라 크기·구도가 제각각입니다.
@@ -352,7 +348,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
 .staff .st.hit:focus-visible{outline:2px solid var(--team-a);outline-offset:2px}
 /* 보드가 180px 높아진 만큼 필드도 666→846 입니다. 카드 y 는 그대로라
    늘어난 공간은 전부 가장 아래 줄 밑에 남습니다. */
-.field{flex:none;height:846px;position:relative;z-index:1;margin-top:20px}
+.field{flex:none;height:846px;position:relative;z-index:1;margin-top:16px}
 /* 주요 후보 라벨 — 카드가 아니라 작은 머리글입니다. 수비는 블록이 y=0 에서
    시작하므로 라벨이 필드 위쪽 여백(margin-top)으로 올라갑니다. */
 .candlb{position:absolute;left:8.8px;font-size:10px;font-weight:700;color:var(--dim);
@@ -664,6 +660,39 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);
  font-size:13px;font-weight:600}
 .yterr code{background:transparent;color:inherit;padding:0}
 
+/* ── 본문 속 표 ──────────────────────────────────────────────────────── */
+.mdtw{overflow-x:auto;max-width:100%;margin:0 0 1em;background:var(--board);
+ border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}
+/* 크기는 둘레 글에 붙여 정합니다(.95em) — 재 보면 사이트 리뷰 칸에서 14.6px 이고,
+   옆에 선 박스스코어 값(15.1px)·팀 스탯 표(14.5px)와 같은 덩치입니다. 편집 화면
+   미리보기와 검토 파일은 "사이트에 나가는 모양"을 보여 주는 자리라 같은 비율을
+   씁니다(그쪽 박스스코어 칸은 12.5px 짜리 도구 화면이라 기준으로 삼지 않습니다).
+   em 은 겹쳐 곱해지므로 크기는 표에 한 번만 겁니다. 앞줄의 px 은 max() 를 모르는
+   옛 브라우저용 예비값입니다. */
+.mdt{width:100%;margin:0;border-collapse:collapse;line-height:1.5;
+ font-variant-numeric:tabular-nums;font-size:14px;font-size:max(12px,.95em)}
+.mdt th,.mdt td{padding:7px 12px;text-align:left;white-space:nowrap;
+ font-size:inherit;border-bottom:1px solid rgba(36,48,73,.5)}
+.mdt thead th{position:static;top:auto;z-index:auto;cursor:default;user-select:auto;
+ background:none;font-size:.88em;font-weight:800;letter-spacing:.04em;
+ color:var(--dim);border-bottom:1px solid var(--line)}
+.mdt tbody tr:nth-child(even){background:rgba(255,255,255,.028)}
+.mdt tbody tr:last-child td{border-bottom:0}
+.mdt td{color:#c3cddf;font-weight:600}
+.mdt td:first-child{color:var(--ink);font-weight:700}
+.mdt .l{text-align:left}
+.mdt .c{text-align:center}
+.mdt .r{text-align:right}
+.mdt a{color:#7ea8ff}
+.mdt strong{color:var(--ink);font-weight:800}
+.mderr{display:inline-block;background:rgba(255,77,79,.10);color:var(--hot);
+ border:1px solid rgba(255,77,79,.35);border-radius:6px;padding:2px 8px;
+ font-size:13px;font-weight:600}
+.mderr code{background:transparent;color:inherit;padding:0;white-space:pre-wrap}
+@media(max-width:640px){
+  .mdt th,.mdt td{padding:6px 9px}
+}
+
 
 /* ── 좌측 슬라이드 메뉴 ──────────────────────────────────────────────────
    전부 position:fixed 입니다. 보드 위에 얹혀도 보드의 흐름을 한 픽셀도
@@ -729,6 +758,7 @@ body{align-items:safe center}
 
 <div class="bar">
   <select id="team"></select>
+  <select id="season" aria-label="시즌"></select>
   <span id="presets"></span>
   <button id="fit">화면에 맞춤</button>
 </div>
@@ -1114,6 +1144,13 @@ function paneBox(box,g,bx,opt){
 }
 
 let side="offense", code=null, dcode=null, viewMode="roster";
+// 탭 목록 — 탭 줄·기본값·복귀가 전부 이 표 하나를 읽습니다.
+const VIEWS=[["roster","로스터"],["pass","패스 분석"],["run","러닝 분석"],
+             ["third","3RD 다운 분석"],["rz","레드존 분석"],["sched","주차별 성적"]];
+// 지금 화면이 실제로 보고 있는 시즌. 주차별 성적은 경기 자료가 있는 시즌
+// 하나뿐이고, 나머지 탭은 사용자가 고른 시즌(tseason)입니다. tseason 은
+// 주차별 성적에 들어가도 건드리지 않으므로 돌아오면 보던 시즌 그대로입니다.
+const viewSeason=()=>viewMode==="sched"?schedSeason():tseason;
 const num=(v,dec)=>dec?Number(v).toFixed(dec)
                       :Math.round(v).toLocaleString("en-US");
 
@@ -1195,24 +1232,12 @@ const notReady=(what)=>`<div class="runstub nr">${esc(tseason)} 시즌 준비 �
   nflverse 가 ${esc(tseason)} play-by-play 를 공개하면 자동으로 켜집니다${
   what?" — "+esc(what):""}</small></div>`;
 
-// 왼쪽 열은 항상 기록입니다. 버튼은 가운데 필드 영역만 바꿉니다.
-function teamCol(t){
-  const sbar=`<div class="sbar">`+TSEASONS.map(s=>`<button class="sbtn" data-y="${s.y}"
-      aria-pressed="${String(s.y)===tseason}"${s.ok?"":` data-off="1"`}
-      >${s.y}${s.ok?"":`<small>준비 중</small>`}</button>`).join("")+`</div>`;
-  const bar=`<div class="cbar">`+[["roster","로스터"],["pass","패스 분석"],
-      ["run","러닝 분석"],["third","3RD 다운 분석"],["rz","레드존 분석"],
-      ["sched","주차별 성적"]]
-      .map(([m,lb])=>`<button class="cbtn" data-m="${m}"
-      aria-pressed="${viewMode===m}">${esc(lb)}</button>`).join("")+`</div>`;
-  // 주차별 성적은 세 칸이 판 전체를 씁니다 — 팀 기록 패널과 시즌 초 안내는
-  // 아예 안 그리고 단추만 남깁니다. 단추가 자리를 지켜야 다른 탭으로 돌아갈
-  // 수 있고, 이 함수가 render 마다 다시 도니 상태가 남지 않습니다.
-  // 시즌 토글은 감춥니다 — 이 탭은 경기 자료가 있는 시즌 하나만 봅니다.
-  // tseason 은 그대로 두므로 다른 탭으로 돌아가면 보던 시즌에서 이어집니다.
-  if(viewMode==="sched") return `<div class="tcol">${bar}</div>`;
+// 왼쪽 기록 열만 만듭니다 — 탭 줄과 머리 줄은 render 가 판의 맨 위에 답니다
+// (모든 탭이 같은 자리·같은 모양). 주차별 성적처럼 기록 열을 안 쓰는 탭은
+// render 가 이 함수를 아예 부르지 않습니다.
+function teamPanel(t){
   const s=TS()[t]&&TS()[t][side];
-  if(!s) return `<div class="tcol">${sbar}${bar}<h3>${esc(tseason)} 팀 기록</h3>
+  if(!s) return `<div class="tcol"><h3>${esc(tseason)} 팀 기록</h3>
     ${earlyNote(t)}
     <div class="tnone">${noGames(t)
       ? "아직 "+esc(tseason)+" 정규시즌 경기를 치르지 않았습니다 — 0승 0패. 기록은 첫 경기가 끝나면 찹니다."
@@ -1246,7 +1271,7 @@ function teamCol(t){
   let cells="";
   for(let i=0;i<Math.max(A.length,B.length);i++) cells+=cellAt(A[i])+cellAt(B[i]);
   const grid=`<div class="tgrid">${cells}</div>`;
-  return `<div class="tcol">${sbar}${bar}<h3>${esc(tseason)} 팀 기록 · ${side==="offense"?"공격":"수비"}</h3>
+  return `<div class="tcol"><h3>${esc(tseason)} 팀 기록 · ${side==="offense"?"공격":"수비"}</h3>
     ${earlyNote(t)}${top.map(line).join("")}${grid}</div>`;
 }
 
@@ -1868,13 +1893,35 @@ pnl.addEventListener("keydown",e=>{
   const tr=e.target.closest("tr.crow.exp");
   if(tr){ e.preventDefault(); toggleCareer(tr); }
 });
+// ── 시즌 드롭다운 ────────────────────────────────────────────────────────
+// 순서는 TSEASONS 가 정합니다 — 일정이 공개된 시즌 가운데 최신이 맨 앞이고,
+// 연도를 코드에 적지 않습니다. 기본값은 그 맨 앞(=최신 시즌)입니다.
+// 주차별 성적은 경기 자료가 있는 시즌 하나만 제공하므로, 그 탭에서는 나머지
+// 시즌을 끄되 목록에서 지우지는 않습니다 — 왜 못 고르는지가 보여야 합니다.
+const seasonSel=document.getElementById("season");
+function paintSeasonSel(){
+  const only=viewMode==="sched"?schedSeason():null;
+  seasonSel.innerHTML=TSEASONS.map(x=>{
+    const y=String(x.y);
+    const off=only&&y!==only;
+    const why=off?` — 주차별 성적은 ${only} 시즌만 제공`:(x.ok?"":" (준비 중)");
+    return `<option value="${esc(y)}"${off?" disabled":""}>${esc(y+why)}</option>`;
+  }).join("");
+  seasonSel.value=viewSeason();
+  // 고를 것이 하나뿐이면 드롭다운 자체를 끕니다 — 보이기는 하되 눌러도
+  // 할 일이 없다는 것이 드러납니다.
+  seasonSel.disabled=!!only&&TSEASONS.length<2;
+  seasonSel.title=only?`주차별 성적은 ${only} 시즌만 제공합니다`:"";
+}
+seasonSel.onchange=()=>{
+  if(viewMode==="sched") return;          // 이 탭에서는 시즌이 고정입니다
+  tseason=seasonSel.value; runSel=""; code=null; dcode=null; render();
+};
 const closePanel=()=>ov.classList.remove("on");
 ov.onclick=e=>{ if(e.target===ov) closePanel(); };
 addEventListener("keydown",e=>{ if(e.key==="Escape") closePanel(); });
 board.addEventListener("click",e=>{
   if(!e.target.closest) return;
-  const y=e.target.closest(".sbtn");
-  if(y){ tseason=y.dataset.y; runSel=""; code=null; dcode=null; render(); return; }
   const b=e.target.closest(".cbtn");
   if(b){ viewMode = viewMode===b.dataset.m ? "roster" : b.dataset.m; render(); return; }
   const sg=e.target.closest(".schrow[data-sg]");
@@ -1930,6 +1977,11 @@ board.addEventListener("keydown",e=>{
 });
 
 function presets(){
+  const box=document.getElementById("presets");
+  // 주차별 성적에서는 공격·수비도 퍼스널 코드도 화면을 바꾸지 않습니다 —
+  // 눌러도 반응 없는 단추를 남겨 두지 않고 칸을 통째로 감춥니다.
+  if(viewMode==="sched"){ box.innerHTML=""; box.hidden=true; return; }
+  box.hidden=false;
   const d=DATA()[sel.value];
   if(!code || !d.offense[code]) code=Object.keys(d.offense)[0];
   if(!dcode || !d.defense[dcode]) dcode=Object.keys(d.defense)[0];
@@ -1939,7 +1991,7 @@ function presets(){
   const off=d.personnel.filter(([c])=>d.offense[c]).map(([c,p])=>mk("offense",c,p,"공격"));
   const def=(d.def_personnel||[]).filter(([c])=>d.defense[c])
               .map(([c,p])=>mk("defense",c,p,"수비"));
-  document.getElementById("presets").innerHTML = off.join("")+def.join("");
+  box.innerHTML = off.join("")+def.join("");
   document.querySelectorAll("#presets button").forEach(b=>{
     b.onclick=()=>{ side=b.dataset.s;
       if(side==="offense") code=b.dataset.p; else dcode=b.dataset.p;
@@ -1988,12 +2040,22 @@ function render(){
   // 주차별 성적 탭은 배치가 통째로 다릅니다(세로 배치·세 칸 전폭).
   // 표식 하나로 CSS 가 전부 처리하므로 다른 탭의 기하는 한 픽셀도 안 바뀝니다.
   board.classList.toggle("schedon", viewMode==="sched");
-  board.innerHTML=teamCol(t)+`<div class="main">
-    <div class="head"><h1>${esc(m.name)}</h1>
-      <span class="season">${esc(viewMode==="sched"?schedSeason():boardYear())} SEASON</span>
-      <span class="side">${side==="offense"
-        ? "OFFENSE · "+esc(code)+" PERSONNEL"
-        : "DEFENSE · "+esc(dcode)+" · "+esc(d.scheme)}</span></div>
+  // 탭 줄과 머리 줄은 모든 탭에서 같은 자리에 같은 모양으로 섭니다 — 탭을
+  // 바꿔도 움직이지 않습니다. 탭마다 다른 것은 그 아래 내용뿐입니다.
+  const tabs=`<div class="cbar">`+VIEWS.map(([m,lb])=>`<button class="cbtn" data-m="${m}"
+      aria-pressed="${viewMode===m}">${esc(lb)}</button>`).join("")+`</div>`;
+  // 오른쪽 꼬리표 — 로스터에서만 퍼스널 코드까지 말이 됩니다. 분석 탭은
+  // 공격·수비만 뜻이 있고(퍼스널 코드는 그 화면을 바꾸지 않습니다), 주차별
+  // 성적은 둘 다 상관없어 꼬리표를 아예 안 답니다.
+  const sideLb = viewMode==="sched" ? ""
+    : viewMode==="roster"
+      ? (side==="offense" ? "OFFENSE · "+esc(code)+" PERSONNEL"
+                          : "DEFENSE · "+esc(dcode)+" · "+esc(d.scheme))
+      : (side==="offense" ? "OFFENSE" : "DEFENSE");
+  board.innerHTML=tabs+`<div class="head"><h1>${esc(m.name)}</h1>
+      <span class="season">${esc(viewSeason())} SEASON</span>
+      <span class="side">${sideLb}</span></div>
+    <div class="bd">${viewMode==="sched"?"":teamPanel(t)}<div class="main">
     ${viewMode==="sched"?"":`<div class="staff">${strip}</div>`}
     <div class="field">${
       viewMode==="sched" ? schedField(t)
@@ -2004,8 +2066,9 @@ function render(){
       : viewMode==="rz" ? rzField(t)
       : cards.map(p=>card(p)).join("")+candLab+cand.map(p=>card(p,true)).join("")
     }</div>
-    </div>`;
+    </div></div>`;
   presets();
+  paintSeasonSel();
   // 가운데·오른쪽 칸은 왼쪽 목록을 그린 다음에 채웁니다 — 그래야 고른 줄에
   // aria-pressed 가 제대로 붙습니다.
   if(viewMode==="sched") schShow(schSel);
