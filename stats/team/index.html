@@ -64,31 +64,14 @@ function getJSON(url){
 }
 function regLoad(){
   if(REGC.reg) return Promise.resolve(REGC.reg);
-  return getJSON("/splits/registry.json").then(j=>(REGC.reg=j));
+  // 실패는 캐시하지 않습니다 — 한 번 못 받았다고 그 뒤로 영영 "자료 없음"이
+  // 되면, 잠깐 끊긴 것과 진짜로 없는 것을 구별할 수 없습니다.
+  return getJSON("/splits/registry.json").then(j=>{ if(j) REGC.reg=j; return j; });
 }
 function splitLoad(y,sp){
   const k=y+"|"+sp;
   if(REGC.files[k]) return Promise.resolve(REGC.files[k]);
-  return getJSON(`/splits/team_${y}_${sp}.json`).then(j=>(REGC.files[k]=j));
-}
-// 등록부 순위 — 방향은 등록부가 정하고, 동점은 보드·기존 표와 같은 1,1,3
-// 방식에 "공동" 을 답니다. 표본이 얇은 칸(min_n)은 순위를 안 답니다.
-function regRank(rows, stat, teams){
-  const dir=stat.dir;
-  if(dir==="NONE") return {r:{},tied:[]};
-  const ok=teams.filter(t=>regVal(rows,t,stat)!=null && regOK(rows,t,stat));
-  ok.sort((a,b)=>{
-    const va=regVal(rows,a,stat), vb=regVal(rows,b,stat);
-    return dir==="HIGH"?vb-va:va-vb;
-  });
-  const r={}; let prev=null, pr=0;
-  ok.forEach((t,i)=>{
-    const v=regVal(rows,t,stat);
-    const rk=(prev!==null&&v===prev)?pr:i+1;
-    prev=v; pr=rk; r[t]=rk;
-  });
-  const cnt={}; Object.values(r).forEach(x=>cnt[x]=(cnt[x]||0)+1);
-  return {r, tied:Object.keys(cnt).filter(x=>cnt[x]>1).map(Number)};
+  return getJSON(`/splits/team_${y}_${sp}.json`).then(j=>{ if(j) REGC.files[k]=j; return j; });
 }
 const regSide=(rows,t,stat)=>((rows[t]||{})[stat.sd==="def"?"def":(stat.k.slice(0,3)==="st_"?"st":"off")])||{};
 function regVal(rows,t,stat){
@@ -116,10 +99,30 @@ function drawReg(){
   const sp=noSp?"all":curSplit;
   out.innerHTML=`<div class="pending">불러오는 중…</div>`;
   Promise.all([regLoad(), splitLoad(y,sp)]).then(([reg,file])=>{
-    if(!reg){ out.innerHTML=`<div class="pending">등록부를 못 받았습니다.</div>`; return; }
+    if(!reg){ out.innerHTML=`<div class="pending">스탯 등록부(/splits/registry.json)를
+      못 받았습니다 — 새로고침해 보세요.</div>`; cnt.textContent=""; return; }
     paintSplits(reg, y, noSp2(reg,g));
-    if(!file){ out.innerHTML=`<div class="pending">${esc(y)} 시즌 · ${esc(sp)} 자료가 없습니다.</div>`; return; }
+    // 굽지 않은 시즌 — 받기 실패와 구별해서 말합니다.
+    const have=(reg.seasons||[]);
+    if(have.length && have.indexOf(Number(y))<0){
+      out.innerHTML=`<div class="pending">${esc(y)} 시즌은 이 묶음의 자료를 굽지
+        않았습니다 — 지금은 ${esc(have.join(" · "))} 시즌만 있습니다.</div>`;
+      cnt.textContent=""; return;
+    }
+    if(!file){
+      out.innerHTML=`<div class="pending">${esc(y)} 시즌 · ${esc(splitLabel(reg,sp))} 자료를
+        못 받았습니다 (/splits/team_${esc(y)}_${esc(sp)}.json).</div>`;
+      cnt.textContent=""; return; }
     const rows=file.teams, teams=Object.keys(rows).sort();
+    // 이 스플릿에 플레이가 아예 없으면 빈 표 대신 그렇게 말합니다 —
+    // 옛 표를 그대로 두면 다른 조건의 숫자를 이 조건의 숫자로 읽게 됩니다.
+    const tot=teams.reduce((a,t)=>a+((rows[t].off||{})._n||0),0);
+    const dtot=teams.reduce((a,t)=>a+((rows[t]["def"]||{})._n||0),0);
+    if(!tot&&!dtot){
+      out.innerHTML=`<div class="pending">${esc(splitLabel(reg,sp))} — ${esc(y)} 시즌에는
+        이 조건에 해당하는 플레이가 없습니다.</div>`;
+      cnt.textContent=""; return;
+    }
     const stats=reg.stats.filter(s=>s.g===g && Number(y)>=s.first);
     const hidden=reg.stats.filter(s=>s.g===g && Number(y)<s.first);
     if(!stats.length){
@@ -127,8 +130,6 @@ function drawReg(){
         +` ${esc(hidden.map(s=>s.lb).join(" · "))} 는 ${esc(String((hidden[0]||{}).first||""))} 시즌부터입니다.</div>`;
       cnt.textContent=""; return;
     }
-    // 순위·동점은 칸마다 한 번만 셉니다.
-    const RK={}; stats.forEach(s=>{ RK[s.k+"|"+s.sd]=regRank(rows,s,teams); });
     const sk=sort.k, ss=stats.find(s=>(s.k+"|"+s.sd)===sk)||stats[0];
     const list=teams.slice().sort((a,b)=>{
       const va=regVal(rows,a,ss), vb=regVal(rows,b,ss);
@@ -138,7 +139,7 @@ function drawReg(){
       return sort.dir*(ss.dir==="LOW"?(va-vb):(vb-va));
     });
     const arrow=k=>sort.k===k?`<span class="ar">${sort.dir>0?"▲":"▼"}</span>`:"";
-    cnt.textContent=`${list.length}팀`;
+    cnt.textContent=`${list.length}팀 · ${esc(splitLabel(reg,sp))} · 플레이 ${tot.toLocaleString()}`;
     const ftn=stats.some(s=>s.src==="ftn");
     const head=`<tr><th class="tm" data-k="t">팀</th><th class="rn">n</th>`
       +stats.map(s=>`<th data-k="${esc(s.k+"|"+s.sd)}" title="${esc(s.f+(s.model?" · nflverse 모델값":""))}"
@@ -152,10 +153,8 @@ function drawReg(){
           if(v==null) return `<td>—</td>`;
           const thin=!regOK(rows,t,s);
           const txt=(s.dec?Number(v).toFixed(s.dec):Math.round(v).toLocaleString())+(s.u||"");
-          const R2=RK[s.k+"|"+s.sd], rk=R2.r[t];
-          const rtx=rk?((R2.tied.indexOf(rk)>=0?"공동 ":"")+rk+"위"):"";
-          return `<td class="${thin?"thin":""}" title="${esc("n="+regN(rows,t,s))}">${esc(txt)}`
-            +(rk?`<span class="rk${rk<=5?" hot":""}">${esc(rtx)}</span>`:"")+`</td>`;
+          // 등수 뱃지 없음 — 정렬이 곧 순서입니다(기존 탭과 같은 규칙).
+          return `<td class="${thin?"thin":""}" title="${esc("n="+regN(rows,t,s))}">${esc(txt)}</td>`;
         }).join("")+`</tr>`;
     }).join("");
     out.innerHTML=`<div class="tw"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`
@@ -169,6 +168,11 @@ function drawReg(){
 // 스플릿 막대 — 등록부가 준 목록 그대로. FTN 스플릿은 그 시즌에 FTN 이 있을 때만.
 let curSplit="all";
 const noSp2=(reg,g)=>((reg||{}).nosplit||[]).indexOf(g)>=0;
+function splitLabel(reg,k){
+  if(k&&k.slice(0,4)==="opp_") return "상대 "+(TEAMS[k.slice(4)]||k.slice(4));
+  const s=((reg||{}).splits||[]).find(x=>x.k===k);
+  return s?s.lb:k;
+}
 function paintSplits(reg,y,noSp){
   const box=document.getElementById("splits");
   if(!box) return;
@@ -179,19 +183,23 @@ function paintSplits(reg,y,noSp){
     return;
   }
   box.hidden=false;
-  const ok=reg.splits.filter(s=>!s.ftn || Number(y)>=2022);
+  const FTN_FIRST=2022;
   const grp=[];
-  ok.forEach(s=>{ const g=grp.find(x=>x[0]===s.g); (g?g[1]:(grp.push([s.g,[]]),grp[grp.length-1][1])).push(s); });
+  reg.splits.forEach(s=>{ const g=grp.find(x=>x[0]===s.g); (g?g[1]:(grp.push([s.g,[]]),grp[grp.length-1][1])).push(s); });
   box.innerHTML=grp.map(([g,ss])=>`<span class="sgrp"><i>${esc(g)}</i>`
-    +ss.map(s=>`<button data-sp="${esc(s.k)}" aria-pressed="${String(s.k===curSplit)}"
-        >${esc(s.lb)}</button>`).join("")+`</span>`).join("")
+    +ss.map(s=>{
+      const off=s.ftn&&Number(y)<FTN_FIRST;
+      const why=off?` — FTN 차팅은 ${FTN_FIRST} 시즌부터입니다`:"";
+      return `<button data-sp="${esc(s.k)}" aria-pressed="${String(s.k===curSplit)}"
+        ${off?"disabled":""} title="${esc(s.lb+why)}">${esc(s.lb)}</button>`;
+    }).join("")+`</span>`).join("")
     +`<span class="sgrp"><i>상대 팀</i><select id="oppsel"><option value="">상대 팀…</option>`
     +Object.keys(TEAMS).sort().map(t=>`<option value="opp_${esc(t)}"${("opp_"+t)===curSplit?" selected":""}
         >${esc(TEAMS[t]||t)}</option>`).join("")+`</select></span>`;
 }
 document.getElementById("splits").addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest("button[data-sp]");
-  if(!b) return;
+  if(!b||b.disabled) return;
   curSplit=b.dataset.sp; draw();
 });
 document.getElementById("splits").addEventListener("change",e=>{
@@ -278,13 +286,11 @@ function draw(){
     +`</tr></thead><tbody>`
     +list.map(t=>`<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
       +cols.map(([k])=>{
-        const rk=rankOf(rows,t,k), txt=cell(rows,t,k);
-        // 나뉜 등수는 "공동 N위" — 보드 왼쪽 열·코치 패널과 같은 표(R.tied)를
-        // 읽으므로 두 화면이 서로 다른 말을 할 수 없습니다.
-        const tied=((R.tied||{})[y]||{})[dataKey(k)];
-        const rtx=(tied&&tied.indexOf(rk)>=0?"공동 ":"")+rk+"위";
-        return `<td>${esc(txt)}`+(rk!=null&&txt!=="—"
-          ? `<span class="rk${rk<=5?" hot":""}">${esc(rtx)}</span>`:"")+`</td>`;
+        // 이 페이지에는 등수 뱃지를 달지 않습니다 — 표가 정렬되므로 순서가
+        // 곧 등수이고, 칸마다 "1위" 를 덧붙이면 숫자를 읽기 어려워집니다.
+        // 보드 왼쪽 열과 코치 패널의 등수는 그대로 둡니다.
+        const txt=cell(rows,t,k);
+        return `<td>${esc(txt)}</td>`;
       }).join("")+`</tr>`).join("")
     +`</tbody></table></div>`;
 }
