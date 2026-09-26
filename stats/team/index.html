@@ -131,8 +131,12 @@ function draw(){
     +list.map(t=>`<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
       +cols.map(([k])=>{
         const rk=rankOf(rows,t,k), txt=cell(rows,t,k);
+        // 나뉜 등수는 "공동 N위" — 보드 왼쪽 열·코치 패널과 같은 표(R.tied)를
+        // 읽으므로 두 화면이 서로 다른 말을 할 수 없습니다.
+        const tied=((R.tied||{})[y]||{})[dataKey(k)];
+        const rtx=(tied&&tied.indexOf(rk)>=0?"공동 ":"")+rk+"위";
         return `<td>${esc(txt)}`+(rk!=null&&txt!=="—"
-          ? `<span class="rk${rk<=5?" hot":""}">${rk}위</span>`:"")+`</td>`;
+          ? `<span class="rk${rk<=5?" hot":""}">${esc(rtx)}</span>`:"")+`</td>`;
       }).join("")+`</tr>`).join("")
     +`</tbody></table></div>`;
 }

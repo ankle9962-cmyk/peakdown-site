@@ -185,6 +185,9 @@ thead th.off:hover{color:var(--dim)}
   td .rk{font-size:11px;margin-left:4px}
 }
 
+/* 디비전 자리 — 나뉜 자리는 숫자 위에 작은 '공동' 을 답니다. */
+td.rn s{display:block;text-decoration:none;font-size:.62em;font-weight:700;
+ letter-spacing:.04em;color:#4a5878;line-height:1}
 /* ── 26시즌 팀 순위 ───────────────────────────────────────────────────────
    디비전 카드 여덟 장(1999–2001 은 여섯 장)을 두 줄로 세웁니다. 카드 안은
    하위 페이지 공용 표 스타일 그대로이고, 카드가 테두리를 그리므로 안쪽 .tw
