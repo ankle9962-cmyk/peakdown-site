@@ -18,6 +18,7 @@
   <span class="sub">정규시즌 · 32팀 순위</span><span class="cnt" id="cnt"></span></div>
 <div class="pick"><label for="season">시즌</label><select id="season"></select></div>
 <div class="tabs" id="tabs" role="tablist"></div>
+<div class="splits" id="weeks" hidden></div>
 <div class="splits" id="splits" hidden></div>
 <div class="early" id="early" hidden></div>
 <div id="out"></div>
@@ -57,6 +58,80 @@ const TABS=[{"n": "기본", "c": [["rec", "승-패"], ["pf", "득점"], ["off_yd
 const UNIT={"off_third": "%", "off_rz": "%", "off_cmp_pct": "%", "def_third": "%", "def_rz": "%", "def_cmp_pct": "%"};
 const R=(typeof window.TEAM_SEASON_RANKS!=="undefined")?window.TEAM_SEASON_RANKS:null;
 
+// ── 주 범위 ──────────────────────────────────────────────────────────────
+// 성분(분자·분모가 될 합계)을 고른 주만큼 더한 다음 마지막에 한 번 나눕니다.
+// 주별 비율을 평균 내면 플레이 수가 다른 주가 같은 무게를 가져 시즌 값과
+// 어긋납니다 — 그래서 값이 아니라 성분을 저장합니다.
+let wkFrom=null, wkTo=null, perGame=false;
+function wkClamp(file){
+  const ws=(file&&file.weeks)||[];
+  if(!ws.length){ wkFrom=wkTo=null; return ws; }
+  const lo=ws[0], hi=ws[ws.length-1];
+  if(wkFrom==null||ws.indexOf(wkFrom)<0) wkFrom=lo;
+  if(wkTo==null||ws.indexOf(wkTo)<0) wkTo=hi;
+  if(wkTo<wkFrom) wkTo=wkFrom;
+  return ws;
+}
+// 고른 주의 성분을 더합니다. box 는 {주: [성분…]}.
+function wkSum(box, ci){
+  const out=new Array(ci.length).fill(0);
+  if(!box) return out;
+  for(const w in box){
+    const n=+w;
+    if(n<wkFrom||n>wkTo) continue;
+    const v=box[w];
+    for(let i=0;i<out.length;i++) out[i]+=(v[i]||0);
+  }
+  return out;
+}
+function wkLabel(){
+  if(wkFrom==null) return "";
+  return wkFrom===wkTo?`${wkFrom}주`:`${wkFrom}–${wkTo}주`;
+}
+// 빠른 고르기 — 시즌 전체 · 최근 4주 · 고정 구간.
+function wkPresets(ws){
+  if(!ws.length) return [];
+  const hi=ws[ws.length-1], lo=ws[0];
+  const out=[["all",`시즌 전체`,lo,hi],["last4","최근 4주",Math.max(lo,hi-3),hi]];
+  [[1,4],[5,8],[9,12],[13,18]].forEach(([a,b])=>{
+    if(ws.some(w=>w>=a&&w<=b)) out.push([`b${a}`,`${a}–${b}`,Math.max(a,lo),Math.min(b,hi)]);
+  });
+  return out;
+}
+let wkHasCount=false;
+function paintWeeks(file){
+  const box=document.getElementById("weeks");
+  if(!box) return;
+  const ws=wkClamp(file);
+  if(!ws.length){ box.hidden=true; return; }
+  box.hidden=false;
+  const opt=(v,sel)=>`<option value="${v}"${v===sel?" selected":""}>${v}주</option>`;
+  box.innerHTML=`<span class="sgrp"><i>주차</i>`
+    +`<select id="wfrom">${ws.map(w=>opt(w,wkFrom)).join("")}</select>`
+    +`<span class="wtil">~</span>`
+    // "to" 는 "from" 보다 앞설 수 없습니다 — 앞 주는 아예 목록에 안 넣습니다.
+    +`<select id="wto">${ws.filter(w=>w>=wkFrom).map(w=>opt(w,wkTo)).join("")}</select>`
+    +`</span><span class="sgrp"><i>빠른 고르기</i>`
+    +wkPresets(ws).map(([k,lb,a,b])=>`<button data-wk="${a}:${b}"
+        aria-pressed="${String(a===wkFrom&&b===wkTo)}">${esc(lb)}</button>`).join("")
+    +`</span>`
+    +(wkHasCount?`<span class="sgrp"><i>보기</i>`
+      +`<button data-pg="0" aria-pressed="${String(!perGame)}">합계</button>`
+      +`<button data-pg="1" aria-pressed="${String(perGame)}">경기당</button></span>`
+      :`<span class="sgrp"><i>보기</i><span class="snote">이 묶음은 전부 비율·평균이라
+        합계/경기당 구분이 없습니다.</span></span>`);
+}
+document.getElementById("weeks").addEventListener("change",e=>{
+  if(e.target.id==="wfrom"){ wkFrom=+e.target.value; if(wkTo<wkFrom) wkTo=wkFrom; draw(); }
+  else if(e.target.id==="wto"){ wkTo=+e.target.value; draw(); }
+});
+document.getElementById("weeks").addEventListener("click",e=>{
+  const w=e.target.closest&&e.target.closest("button[data-wk]");
+  if(w){ const [a,b]=w.dataset.wk.split(":").map(Number); wkFrom=a; wkTo=b; draw(); return; }
+  const p=e.target.closest&&e.target.closest("button[data-pg]");
+  if(p){ perGame=p.dataset.pg==="1"; draw(); }
+});
+
 // 받아 온 것은 두 번 받지 않습니다.
 const REGC={reg:null, files:{}};
 function getJSON(url){
@@ -73,23 +148,56 @@ function splitLoad(y,sp){
   if(REGC.files[k]) return Promise.resolve(REGC.files[k]);
   return getJSON(`/splits/team_${y}_${sp}.json`).then(j=>{ if(j) REGC.files[k]=j; return j; });
 }
-const regSide=(rows,t,stat)=>((rows[t]||{})[stat.sd==="def"?"def":(stat.k.slice(0,3)==="st_"?"st":"off")])||{};
-function regVal(rows,t,stat){
-  const v=regSide(rows,t,stat)[stat.k];
-  return (v===undefined||v===null)?null:v;
+const regBox=(rows,t,stat)=>((rows[t]||{})[stat.sd==="def"?"def":(stat.k.slice(0,3)==="st_"?"st":"off")])||null;
+// 고른 주의 성분 합. 한 팀·한 쪽마다 한 번만 더하고 캐시합니다.
+let SUMC={};
+function regSum(file,rows,t,stat){
+  const st=stat.k.slice(0,3)==="st_";
+  const side=st?"st":(stat.sd==="def"?"def":"off");
+  const key=t+"|"+side;
+  if(SUMC[key]) return SUMC[key];
+  const ci=st?(file.stcomp||[]):(file.comp||[]);
+  const idx=st?(file._six||(file._six=Object.fromEntries(ci.map((c,i)=>[c,i]))))
+              :(file._cix||(file._cix=Object.fromEntries(ci.map((c,i)=>[c,i]))));
+  const v=wkSum(regBox(rows,t,stat),ci);
+  const o={v,idx};
+  SUMC[key]=o; return o;
+}
+// 비율은 여기서 딱 한 번 만들어집니다 — 분자 합 ÷ 분모 합.
+function regVal(file,rows,t,stat){
+  const s=regSum(file,rows,t,stat);
+  const ni=s.idx[stat.num], di=s.idx[stat.den];
+  if(ni===undefined||di===undefined) return null;
+  const den=s.v[di];
+  if(!den) return null;
+  let out=s.v[ni]/den*(stat.sc||1);
+  // PROE 는 "패스율 − 기대 패스율" 이라 두 비율의 차입니다.
+  if(stat.k==="pc_proe"){
+    const dbi=s.idx["db"], ni2=s.idx["xpass_sum"];
+    out=(s.v[dbi]/den - s.v[ni2]/den)*100;
+  }
+  return out;
 }
 // 최소 표본 — 등록부의 (세는 대상, 개수). 세는 대상은 파일이 같이 실어 보낸
 // _n(센 플레이) · _db(드롭백) 같은 칸입니다.
-const REG_NKEY={plays:"_n",dropbacks:"_db",rushes:"_ru",drives:"_dr",games:"_g",
-  pa_plays:"_pa",rpo_plays:"_rpo",blitz:"_blitz",light:"_light",heavy:"_heavy",
-  fg_u30:"_fg_u30",fg_30:"_fg_30",fg_40:"_fg_40",fg_50:"_fg_50",xp:"_xp",
-  punts:"_punts",kr:"_kr",pr:"_pr"};
-function regN(rows,t,stat){
-  const box=regSide(rows,t,stat), nk=REG_NKEY[stat.min[0]]||"_n";
-  const v=box[nk];
-  return (v===undefined||v===null)?0:v;
+// 등록부의 min_n 이 세는 대상 → 성분 이름. 성분 이름이 바뀌면 여기도 같이
+// 고쳐야 합니다(안 맞으면 표본 수가 0 으로 읽혀 표가 통째로 비어 버립니다).
+const REG_NKEY={plays:"n",dropbacks:"db",rushes:"ru",drives:"dr",games:"g",
+  pa_plays:"pa",rpo_plays:"rpo",blitz:"blitz",light:"light",heavy:"heavy",
+  fg_u30:"fg_u30",fg_30:"fg_30",fg_40:"fg_40",fg_50:"fg_50",xp:"xp",
+  punts:"punts",kr:"kr",pr:"pr"};
+function regN(file,rows,t,stat){
+  const s=regSum(file,rows,t,stat);
+  const i=s.idx[REG_NKEY[stat.min[0]]||"n"];
+  return i===undefined?0:(s.v[i]||0);
 }
-const regOK=(rows,t,stat)=>regN(rows,t,stat)>=stat.min[1];
+const regOK=(file,rows,t,stat)=>regN(file,rows,t,stat)>=stat.min[1];
+// 경기 수 — 고른 주 안에서 그 팀이 치른 경기 수입니다.
+function regG(file,rows,t){
+  const s=regSum(file,rows,t,{k:"g",sd:"off",num:"g",den:"g",min:["plays",0]});
+  const i=s.idx["g"];
+  return i===undefined?0:(s.v[i]||0);
+}
 
 function drawReg(){
   const y=sel.value, g=TABS[tab].g;
@@ -114,10 +222,15 @@ function drawReg(){
         못 받았습니다 (/splits/team_${esc(y)}_${esc(sp)}.json).</div>`;
       cnt.textContent=""; return; }
     const rows=file.teams, teams=Object.keys(rows).sort();
+    SUMC={};                      // 주 범위가 바뀌면 합을 다시 냅니다
+    wkHasCount=reg.stats.some(x=>x.g===g && x.pg);
+    paintWeeks(file);
     // 이 스플릿에 플레이가 아예 없으면 빈 표 대신 그렇게 말합니다 —
     // 옛 표를 그대로 두면 다른 조건의 숫자를 이 조건의 숫자로 읽게 됩니다.
-    const tot=teams.reduce((a,t)=>a+((rows[t].off||{})._n||0),0);
-    const dtot=teams.reduce((a,t)=>a+((rows[t]["def"]||{})._n||0),0);
+    const NST={k:"n",sd:"off",num:"n",den:"n",min:["plays",0]};
+    const DST={k:"n",sd:"def",num:"n",den:"n",min:["plays",0]};
+    const tot=teams.reduce((a,t)=>a+regN(file,rows,t,NST),0);
+    const dtot=teams.reduce((a,t)=>a+regN(file,rows,t,DST),0);
     if(!tot&&!dtot){
       out.innerHTML=`<div class="pending">${esc(splitLabel(reg,sp))} — ${esc(y)} 시즌에는
         이 조건에 해당하는 플레이가 없습니다.</div>`;
@@ -132,29 +245,33 @@ function drawReg(){
     }
     const sk=sort.k, ss=stats.find(s=>(s.k+"|"+s.sd)===sk)||stats[0];
     const list=teams.slice().sort((a,b)=>{
-      const va=regVal(rows,a,ss), vb=regVal(rows,b,ss);
+      const va=regVal(file,rows,a,ss), vb=regVal(file,rows,b,ss);
       if(va==null&&vb==null) return a.localeCompare(b);
       if(va==null) return 1;
       if(vb==null) return -1;
       return sort.dir*(ss.dir==="LOW"?(va-vb):(vb-va));
     });
     const arrow=k=>sort.k===k?`<span class="ar">${sort.dir>0?"▲":"▼"}</span>`:"";
-    cnt.textContent=`${list.length}팀 · ${esc(splitLabel(reg,sp))} · 플레이 ${tot.toLocaleString()}`;
+    cnt.textContent=`${list.length}팀 · ${esc(splitLabel(reg,sp))}`
+      +(wkLabel()?` · ${wkLabel()}`:"")+` · 플레이 ${tot.toLocaleString()}`;
     const ftn=stats.some(s=>s.src==="ftn");
-    const head=`<tr><th class="tm" data-k="t">팀</th><th class="rn">n</th>`
+    const head=`<tr><th class="tm" data-k="t">팀</th><th class="rn" title="고른 주 안에서 치른 경기 수">G</th><th class="rn">n</th>`
       +stats.map(s=>`<th data-k="${esc(s.k+"|"+s.sd)}" title="${esc(s.f+(s.model?" · nflverse 모델값":""))}"
           >${esc(s.lb)}${arrow(s.k+"|"+s.sd)}</th>`).join("")+`</tr>`;
     const body=list.map(t=>{
-      const n=(rows[t].off||{})._n||0, dn=(rows[t]["def"]||{})._n||0;
+      const n=regN(file,rows,t,NST), dn=regN(file,rows,t,DST), gms=regG(file,rows,t);
       return `<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
+        +`<td class="rn">${gms}</td>`
         +`<td class="rn" title="센 플레이 수(공격/수비)">${n}/${dn}</td>`
         +stats.map(s=>{
-          const v=regVal(rows,t,s);
+          let v=regVal(file,rows,t,s);
           if(v==null) return `<td>—</td>`;
-          const thin=!regOK(rows,t,s);
-          const txt=(s.dec?Number(v).toFixed(s.dec):Math.round(v).toLocaleString())+(s.u||"");
-          // 등수 뱃지 없음 — 정렬이 곧 순서입니다(기존 탭과 같은 규칙).
-          return `<td class="${thin?"thin":""}" title="${esc("n="+regN(rows,t,s))}">${esc(txt)}</td>`;
+          // "경기당" 은 누적값에만 걸립니다 — 비율 칸은 그대로입니다.
+          let u=s.u||"";
+          if(perGame&&s.pg){ if(!gms) return `<td>—</td>`; v=v/gms; u=u+"/G"; }
+          const thin=!regOK(file,rows,t,s);
+          const txt=(s.dec?Number(v).toFixed(s.dec):Math.round(v).toLocaleString())+u;
+          return `<td class="${thin?"thin":""}" title="${esc("n="+regN(file,rows,t,s))}">${esc(txt)}</td>`;
         }).join("")+`</tr>`;
     }).join("");
     out.innerHTML=`<div class="tw"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`
@@ -235,6 +352,7 @@ function draw(){
   // 등록부 탭은 스플릿 파일에서 그립니다 — 기존 탭은 예전 그대로입니다.
   if(TABS[tab]&&TABS[tab].reg){ early.hidden=true; drawReg(); return; }
   document.getElementById("splits").hidden=true;
+  document.getElementById("weeks").hidden=true;
   const y=sel.value, rows=R&&R.seasons[y];
   // 순위를 보류한 시즌(시즌 초) — {팀: 치른 경기 수}. 없으면 순위가 있는 시즌.
   const un=R&&R.unranked&&R.unranked[y];
