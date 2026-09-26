@@ -20,11 +20,12 @@
 <div class="tabs" id="tabs" role="tablist"></div>
 <div class="splits" id="weeks" hidden></div>
 <div class="splits" id="splits" hidden></div>
-<div class="early" id="early" hidden></div>
 <div id="out"></div>
-<p class="note" style="margin-top:18px">순위는 그 시즌 리그 전체에서 매깁니다.
-  칸마다 좋은 쪽이 1위입니다 — 실점·허용야드는 적을수록, 색·테이크어웨이는
-  많을수록 1위입니다. 열 제목을 누르면 그 칸으로 정렬합니다.
+<p class="note" style="margin-top:18px">열 제목을 누르면 그 칸으로 정렬합니다 —
+  칸마다 좋은 쪽이 위입니다(실점·허용야드는 적을수록, 색·테이크어웨이는 많을수록).
+  이 페이지에는 등수 뱃지를 달지 않습니다: 표가 이미 그 칸 순으로 서 있어서
+  줄 순서가 곧 등수입니다. <b>G</b> 는 고른 주 안에서 치른 경기 수,
+  <b>n</b> 은 그 조건에 해당한 플레이 수(공격/수비)입니다.
   <span id="gap"></span></p>
 <p class="credit">데이터: <a href="https://github.com/nflverse/nflverse-data" rel="noopener noreferrer" target="_blank">nflverse</a> (CC BY 4.0) · 차팅: FTN Data via nflverse (CC BY-SA 4.0)</p>
 </div>
@@ -50,13 +51,10 @@
   });
 })();
 </script>
-<script src="/team_season_ranks.js"></script>
 <script>
 const TEAMS={"ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens", "BUF": "Buffalo Bills", "CAR": "Carolina Panthers", "CHI": "Chicago Bears", "CIN": "Cincinnati Bengals", "CLE": "Cleveland Browns", "DAL": "Dallas Cowboys", "DEN": "Denver Broncos", "DET": "Detroit Lions", "GB": "Green Bay Packers", "HOU": "Houston Texans", "IND": "Indianapolis Colts", "JAX": "Jacksonville Jaguars", "KC": "Kansas City Chiefs", "LA": "Los Angeles Rams", "LAC": "Los Angeles Chargers", "LV": "Las Vegas Raiders", "MIA": "Miami Dolphins", "MIN": "Minnesota Vikings", "NE": "New England Patriots", "NO": "New Orleans Saints", "NYG": "New York Giants", "NYJ": "New York Jets", "PHI": "Philadelphia Eagles", "PIT": "Pittsburgh Steelers", "SEA": "Seattle Seahawks", "SF": "San Francisco 49ers", "TB": "Tampa Bay Buccaneers", "TEN": "Tennessee Titans", "WAS": "Washington Commanders"};
 const SEASONS=[1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-const TABS=[{"n": "기본", "c": [["rec", "승-패"], ["pf", "득점"], ["off_yds", "총야드"], ["off_pass", "패싱야드"], ["off_rush", "러싱야드"], ["pa", "실점"], ["def_yds", "허용야드"], ["def_pass", "허용패싱"], ["def_rush", "허용러싱"]], "d": "rec"}, {"n": "공격", "c": [["pf", "득점"], ["off_yds", "총야드"], ["off_epa", "플레이당 EPA"], ["off_third", "서드다운 갱신율"], ["off_rz", "레드존 TD 성공률"], ["off_giveaway", "턴오버"]], "d": "pf"}, {"n": "패스", "c": [["off_pass", "패싱야드"], ["off_pass_att", "패스시도"], ["off_cmp_pct", "패스 성공률"], ["off_pass_td", "패싱 TD"], ["off_int", "인터셉션"], ["off_rating", "패서레이팅"], ["off_adot", "ADOT"]], "d": "off_pass"}, {"n": "러닝", "c": [["off_rush", "러싱야드"], ["off_rush_att", "러싱시도"], ["off_rush_ypc", "시도당 러싱야드"], ["off_rush_td", "러싱 TD"], ["off_bp_run", "빅플레이 러싱 10+"]], "d": "off_rush"}, {"n": "수비", "c": [["pa", "실점"], ["def_yds", "허용야드"], ["def_epa", "허용 플레이당 EPA"], ["def_third", "서드다운 방어율"], ["def_rz", "레드존 방어율"], ["def_takeaway", "테이크어웨이"]], "d": "pa"}, {"n": "패스(수비)", "c": [["def_pass", "허용 패싱야드"], ["def_cmp_pct", "허용 패스 성공률"], ["def_pass_td", "허용 패싱 TD"], ["def_ints", "인터셉션"], ["def_sk", "색"]], "d": "def_pass"}, {"n": "러닝(수비)", "c": [["def_rush", "허용 러싱야드"], ["def_rush_ypc", "허용 시도당 러싱야드"], ["def_rush_td", "허용 러싱 TD"]], "d": "def_rush"}, {"n": "효율", "reg": true, "g": "효율"}, {"n": "플레이콜", "reg": true, "g": "플레이콜"}, {"n": "드라이브", "reg": true, "g": "드라이브"}, {"n": "수비 차팅", "reg": true, "g": "수비 차팅"}, {"n": "스페셜팀", "reg": true, "g": "스페셜팀"}];
-const UNIT={"off_third": "%", "off_rz": "%", "off_cmp_pct": "%", "def_third": "%", "def_rz": "%", "def_cmp_pct": "%"};
-const R=(typeof window.TEAM_SEASON_RANKS!=="undefined")?window.TEAM_SEASON_RANKS:null;
+const TABS=[{"n": "기본", "g": "기본"}, {"n": "공격", "g": "공격"}, {"n": "패스", "g": "패스"}, {"n": "러닝", "g": "러닝"}, {"n": "수비", "g": "수비"}, {"n": "패스(수비)", "g": "패스(수비)"}, {"n": "러닝(수비)", "g": "러닝(수비)"}, {"n": "효율", "g": "효율"}, {"n": "플레이콜", "g": "플레이콜"}, {"n": "드라이브", "g": "드라이브"}, {"n": "수비 차팅", "g": "수비 차팅"}, {"n": "스페셜팀", "g": "스페셜팀"}];
 
 // ── 주 범위 ──────────────────────────────────────────────────────────────
 // 성분(분자·분모가 될 합계)을 고른 주만큼 더한 다음 마지막에 한 번 나눕니다.
@@ -148,26 +146,50 @@ function splitLoad(y,sp){
   if(REGC.files[k]) return Promise.resolve(REGC.files[k]);
   return getJSON(`/splits/team_${y}_${sp}.json`).then(j=>{ if(j) REGC.files[k]=j; return j; });
 }
-const regBox=(rows,t,stat)=>((rows[t]||{})[stat.sd==="def"?"def":(stat.k.slice(0,3)==="st_"?"st":"off")])||null;
-// 고른 주의 성분 합. 한 팀·한 쪽마다 한 번만 더하고 캐시합니다.
+// 성분 배열은 셋입니다. 집합이 서로 달라서 섞으면 안 됩니다:
+//   off/def  센 플레이(무릎·스파이크·2점 시도를 뺀 패스/러싱 시도)
+//   lo/ld    기존 탭이 쓰던 공식 기록 집합(색은 패스 시도에서 빼고 야드는 순패싱)
+//   st       스페셜팀 킥·펀트·리턴
+// 어느 배열을 읽을지는 등록부가 칸마다 ar 로 알려 줍니다.
+const ARCOMP={off:"comp",def:"comp",lo:"lcomp",ld:"lcomp",st:"stcomp"};
+// 고른 주의 성분 합. 한 팀·한 배열마다 한 번만 더하고 캐시합니다.
 let SUMC={};
-function regSum(file,rows,t,stat){
-  const st=stat.k.slice(0,3)==="st_";
-  const side=st?"st":(stat.sd==="def"?"def":"off");
-  const key=t+"|"+side;
+function arSum(file,rows,t,ar){
+  const key=t+"|"+ar;
   if(SUMC[key]) return SUMC[key];
-  const ci=st?(file.stcomp||[]):(file.comp||[]);
-  const idx=st?(file._six||(file._six=Object.fromEntries(ci.map((c,i)=>[c,i]))))
-              :(file._cix||(file._cix=Object.fromEntries(ci.map((c,i)=>[c,i]))));
-  const v=wkSum(regBox(rows,t,stat),ci);
-  const o={v,idx};
+  const ci=file[ARCOMP[ar]]||[];
+  const ik="_ix_"+ar;
+  const idx=file[ik]||(file[ik]=Object.fromEntries(ci.map((c,i)=>[c,i])));
+  const box=((rows[t]||{})[ar])||null;
+  // 고른 주 안에 그 팀 줄이 하나도 없으면 "0" 이 아니라 "없음" 입니다.
+  // 3주까지 홈경기가 없는 팀의 홈 득점은 0점이 아니라 아직 없는 것입니다.
+  let has=false;
+  if(box) for(const w in box){ const n=+w; if(n>=wkFrom&&n<=wkTo){ has=true; break; } }
+  const o={v:wkSum(box,ci), idx, has};
   SUMC[key]=o; return o;
 }
+const regSum=(file,rows,t,stat)=>arSum(file,rows,t,stat.ar||"off");
 // 비율은 여기서 딱 한 번 만들어집니다 — 분자 합 ÷ 분모 합.
 function regVal(file,rows,t,stat){
   const s=regSum(file,rows,t,stat);
-  const ni=s.idx[stat.num], di=s.idx[stat.den];
-  if(ni===undefined||di===undefined) return null;
+  if(!s.has) return null;
+  // 패서 레이팅은 네 요소를 각각 0~2.375 로 자른 뒤 더합니다 — 성분을 먼저
+  // 더하고 여기서 한 번만 계산합니다(주별 레이팅을 평균 내면 값이 달라집니다).
+  if(stat.k==="rating"){
+    const gg=k=>{const i=s.idx[k];return i===undefined?0:(s.v[i]||0);};
+    const att=gg("opatt");
+    if(!att) return null;
+    const cl=x=>Math.max(0,Math.min(2.375,x));
+    return ((cl((gg("opcmp")/att-.3)*5)+cl((gg("opass")/att-3)*.25)
+           +cl(gg("optd")/att*20)+cl(2.375-gg("orint")/att*25))/6)*100;
+  }
+  const ni=s.idx[stat.num];
+  if(ni===undefined) return null;
+  // 분모가 없는 칸(득점·야드·TD 처럼 그냥 더하는 값)은 합 자체가 값입니다.
+  // den 을 찾아서 나누려 하면 s.idx[null] 이 undefined 라 칸이 통째로 —가 됩니다.
+  if(stat.den==null) return s.v[ni]*(stat.sc||1);
+  const di=s.idx[stat.den];
+  if(di===undefined) return null;
   const den=s.v[di];
   if(!den) return null;
   let out=s.v[ni]/den*(stat.sc||1);
@@ -187,16 +209,39 @@ const REG_NKEY={plays:"n",dropbacks:"db",rushes:"ru",drives:"dr",games:"g",
   fg_u30:"fg_u30",fg_30:"fg_30",fg_40:"fg_40",fg_50:"fg_50",xp:"xp",
   punts:"punts",kr:"kr",pr:"pr"};
 function regN(file,rows,t,stat){
-  const s=regSum(file,rows,t,stat);
+  // 표본 수는 값이 어느 배열에서 왔든 센 플레이 배열(또는 스페셜팀)에서 셉니다.
+  const ar=stat.ar==="st"?"st":(stat.sd==="def"?"def":"off");
+  const s=arSum(file,rows,t,ar);
   const i=s.idx[REG_NKEY[stat.min[0]]||"n"];
   return i===undefined?0:(s.v[i]||0);
 }
 const regOK=(file,rows,t,stat)=>regN(file,rows,t,stat)>=stat.min[1];
 // 경기 수 — 고른 주 안에서 그 팀이 치른 경기 수입니다.
 function regG(file,rows,t){
-  const s=regSum(file,rows,t,{k:"g",sd:"off",num:"g",den:"g",min:["plays",0]});
+  const s=arSum(file,rows,t,"off");
   const i=s.idx["g"];
   return i===undefined?0:(s.v[i]||0);
+}
+// 이 조건에서 낼 수 있는 칸인가. 낼 수 없으면 왜 못 내는지 같이 말합니다 —
+// 그냥 —로 두면 "자료가 없다" 와 "이 조건에서는 성립하지 않는다" 가 섞입니다.
+const NA_SP={game:"이 조건은 경기를 통째로 가르지 않습니다 — 승-패·득점·실점·G 는 "
+  +"경기 단위 기록이라 플레이 몇 개를 골라서는 낼 수 없습니다.",
+  drive:"이 조건은 드라이브를 통째로 가르지 않습니다 — 한 드라이브 안에서 플레이마다 "
+  +"달라지는 조건이라 드라이브 단위 기록(레드존)이 성립하지 않습니다."};
+function spOK(reg,st,sp){
+  if(!sp||sp.slice(0,4)==="opp_") return true;      // 상대 팀은 경기를 통째로 가릅니다
+  if(st.scope==="game") return (reg.gamesplits||[]).indexOf(sp)>=0;
+  if(st.scope==="drive") return (reg.drivesplits||[]).indexOf(sp)>=0;
+  return true;
+}
+// 승-패는 숫자 한 개가 아니라 전적 문자열입니다 — 정렬은 승률로 합니다.
+function recTxt(file,rows,t){
+  const s=arSum(file,rows,t,"lo");
+  if(!s.has) return null;
+  const g=k=>{const i=s.idx[k];return i===undefined?0:(s.v[i]||0);};
+  const w=g("wn"), l=g("ls"), ti=g("ti");
+  if(!(w+l+ti)) return null;
+  return ti?`${w}-${l}-${ti}`:`${w}-${l}`;
 }
 
 function drawReg(){
@@ -204,12 +249,16 @@ function drawReg(){
   // 스플릿을 걸 수 없는 묶음(스페셜팀)은 늘 전체로 봅니다 — 조건이 안 붙는
   // 플레이라서, 다운·쿼터를 고른 채로 두면 빈 칸만 나옵니다.
   const noSp=((REGC.reg||{}).nosplit||[]).indexOf(g)>=0;
-  const sp=noSp?"all":curSplit;
+  // 예전 시즌은 "전체" 하나만 구워 둡니다 — 상황별 스플릿을 고른 채로 시즌을
+  // 옮기면 없는 파일을 받으러 가므로, 여기서 전체로 되돌립니다.
+  const fs=((REGC.reg||{}).fullsplit||[]);
+  const onlyAll=fs.length>0 && fs.indexOf(Number(y))<0;
+  const sp=(noSp||onlyAll)?"all":curSplit;
   out.innerHTML=`<div class="pending">불러오는 중…</div>`;
   Promise.all([regLoad(), splitLoad(y,sp)]).then(([reg,file])=>{
     if(!reg){ out.innerHTML=`<div class="pending">스탯 등록부(/splits/registry.json)를
       못 받았습니다 — 새로고침해 보세요.</div>`; cnt.textContent=""; return; }
-    paintSplits(reg, y, noSp2(reg,g));
+    paintSplits(reg, y, noSp2(reg,g), onlyAll);
     // 굽지 않은 시즌 — 받기 실패와 구별해서 말합니다.
     const have=(reg.seasons||[]);
     if(have.length && have.indexOf(Number(y))<0){
@@ -223,7 +272,7 @@ function drawReg(){
       cnt.textContent=""; return; }
     const rows=file.teams, teams=Object.keys(rows).sort();
     SUMC={};                      // 주 범위가 바뀌면 합을 다시 냅니다
-    wkHasCount=reg.stats.some(x=>x.g===g && x.pg);
+    wkHasCount=reg.stats.some(x=>x.g===g && x.pg && spOK(reg,x,sp));
     paintWeeks(file);
     // 이 스플릿에 플레이가 아예 없으면 빈 표 대신 그렇게 말합니다 —
     // 옛 표를 그대로 두면 다른 조건의 숫자를 이 조건의 숫자로 읽게 됩니다.
@@ -243,9 +292,23 @@ function drawReg(){
         +` ${esc(hidden.map(s=>s.lb).join(" · "))} 는 ${esc(String((hidden[0]||{}).first||""))} 시즌부터입니다.</div>`;
       cnt.textContent=""; return;
     }
+    // 탭을 처음 열면 그 탭의 첫 칸으로 정렬합니다 — 화살표가 어디에 걸렸는지
+    // 늘 보이게 하려는 것입니다(빈 정렬 키로 두면 순서는 맞고 표시는 없습니다).
+    if(!sort.k) sort={k:stats[0].k+"|"+stats[0].sd, dir:1};
     const sk=sort.k, ss=stats.find(s=>(s.k+"|"+s.sd)===sk)||stats[0];
+    // 승-패 칸은 전적을 보여 주고 순서는 승률로 냅니다(승 1 · 무 0.5).
+    const sv=(t)=>{
+      if(!spOK(reg,ss,sp)) return null;
+      if(ss.k!=="rec") return regVal(file,rows,t,ss);
+      const q=arSum(file,rows,t,"lo"), gi=q.idx["gm"];
+      const gms=gi===undefined?0:(q.v[gi]||0);
+      if(!gms) return null;
+      const gg=k=>{const i=q.idx[k];return i===undefined?0:(q.v[i]||0);};
+      return (gg("wn")+0.5*gg("ti"))/gms;
+    };
     const list=teams.slice().sort((a,b)=>{
-      const va=regVal(file,rows,a,ss), vb=regVal(file,rows,b,ss);
+      if(sk==="t") return sort.dir*a.localeCompare(b);
+      const va=sv(a), vb=sv(b);
       if(va==null&&vb==null) return a.localeCompare(b);
       if(va==null) return 1;
       if(vb==null) return -1;
@@ -255,15 +318,29 @@ function drawReg(){
     cnt.textContent=`${list.length}팀 · ${esc(splitLabel(reg,sp))}`
       +(wkLabel()?` · ${wkLabel()}`:"")+` · 플레이 ${tot.toLocaleString()}`;
     const ftn=stats.some(s=>s.src==="ftn");
-    const head=`<tr><th class="tm" data-k="t">팀</th><th class="rn" title="고른 주 안에서 치른 경기 수">G</th><th class="rn">n</th>`
-      +stats.map(s=>`<th data-k="${esc(s.k+"|"+s.sd)}" title="${esc(s.f+(s.model?" · nflverse 모델값":""))}"
-          >${esc(s.lb)}${arrow(s.k+"|"+s.sd)}</th>`).join("")+`</tr>`;
+    const head=`<tr><th class="tm" data-k="t">팀${arrow("t")}</th>`
+      +`<th class="rn" title="고른 주 안에서 치른 경기 수">G</th>`
+      +`<th class="rn" title="이 조건에 해당한 센 플레이 수 (공격/수비)">n</th>`
+      +stats.map(s=>{
+        const ok=spOK(reg,s,sp);
+        const tip=ok?(s.f+(s.model?" · nflverse 모델값":""))
+                    :(s.f+" — "+(NA_SP[s.scope]||""));
+        return `<th data-k="${esc(s.k+"|"+s.sd)}" class="${ok?"":"nah"}"
+          title="${esc(tip)}">${esc(s.lb)}${arrow(s.k+"|"+s.sd)}</th>`;
+      }).join("")+`</tr>`;
     const body=list.map(t=>{
       const n=regN(file,rows,t,NST), dn=regN(file,rows,t,DST), gms=regG(file,rows,t);
       return `<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
         +`<td class="rn">${gms}</td>`
         +`<td class="rn" title="센 플레이 수(공격/수비)">${n}/${dn}</td>`
         +stats.map(s=>{
+          // 이 조건에서 성립하지 않는 칸 — 왜 못 내는지 말머리로 붙입니다.
+          if(!spOK(reg,s,sp))
+            return `<td class="na" title="${esc(NA_SP[s.scope]||"")}">—</td>`;
+          if(s.k==="rec"){
+            const r=recTxt(file,rows,t);
+            return r==null?`<td>—</td>`:`<td>${esc(r)}</td>`;
+          }
           let v=regVal(file,rows,t,s);
           if(v==null) return `<td>—</td>`;
           // "경기당" 은 누적값에만 걸립니다 — 비율 칸은 그대로입니다.
@@ -290,13 +367,22 @@ function splitLabel(reg,k){
   const s=((reg||{}).splits||[]).find(x=>x.k===k);
   return s?s.lb:k;
 }
-function paintSplits(reg,y,noSp){
+function paintSplits(reg,y,noSp,onlyAll){
   const box=document.getElementById("splits");
   if(!box) return;
   if(noSp){
     box.hidden=false;
     box.innerHTML=`<span class="sgrp"><i>스플릿</i><span class="snote">이 묶음은
       스크리미지 플레이가 아니라서 상황별로 나누지 않습니다 — 전체만 냅니다.</span></span>`;
+    return;
+  }
+  if(onlyAll){
+    // 없는 파일을 받으러 가는 단추를 두지 않습니다. 왜 없는지 같이 적습니다.
+    box.hidden=false;
+    const fs=(reg.fullsplit||[]);
+    box.innerHTML=`<span class="sgrp"><i>스플릿</i><span class="snote">${esc(y)} 시즌은
+      전체만 구워 두었습니다 — 상황별 스플릿은 ${esc(fs.join(" · "))} 시즌에 있습니다.
+      주 범위와 열두 탭은 이 시즌에도 그대로 됩니다.</span></span>`;
     return;
   }
   box.hidden=false;
@@ -327,97 +413,19 @@ document.getElementById("splits").addEventListener("change",e=>{
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sel=document.getElementById("season"), out=document.getElementById("out"),
       cnt=document.getElementById("cnt"), tabs=document.getElementById("tabs"),
-      gap=document.getElementById("gap"), early=document.getElementById("early");
-let tab=0, sort={k:TABS[0].d,dir:1};
+      gap=document.getElementById("gap");
+let tab=0, sort={k:"",dir:1};
 sel.innerHTML=SEASONS.map(y=>`<option value="${y}">${y}</option>`).join("");
-const withData=SEASONS.filter(y=>R&&R.seasons[String(y)]);
-sel.value=String(withData.length?withData[withData.length-1]:SEASONS[SEASONS.length-1]);
+sel.value=String(SEASONS[SEASONS.length-1]);
 tabs.innerHTML=TABS.map((t,i)=>`<button role="tab" data-i="${i}"
   aria-selected="${i===0}">${esc(t.n)}</button>`).join("");
-const idx=k=>R.keys.indexOf(k);
-// 승-패 칸은 전적 문자열을 보여 주고 순위·정렬은 승률(wpct)로 합니다.
-const dataKey=k=>k==="rec"?"wpct":k;
-function cell(rows,t,k){
-  if(k==="rec") return (R.rec&&R.rec[sel.value]&&R.rec[sel.value][t])||"—";
-  const i=idx(k); if(i<0) return "—";
-  const v=rows[t][2*i];
-  if(v==null) return "—";
-  // 표시 자릿수는 자료 파일이 정합니다 — 보드 왼쪽 열과 같은 자릿수입니다.
-  const dc=(R.dec&&R.dec[k]!=null)?R.dec[k]:0;
-  return (dc ? v.toFixed(dc) : Math.round(v).toLocaleString()) + (UNIT[k]||"");
-}
-function rankOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i+1]; }
-function valOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i]; }
-function draw(){
-  // 등록부 탭은 스플릿 파일에서 그립니다 — 기존 탭은 예전 그대로입니다.
-  if(TABS[tab]&&TABS[tab].reg){ early.hidden=true; drawReg(); return; }
-  document.getElementById("splits").hidden=true;
-  document.getElementById("weeks").hidden=true;
-  const y=sel.value, rows=R&&R.seasons[y];
-  // 순위를 보류한 시즌(시즌 초) — {팀: 치른 경기 수}. 없으면 순위가 있는 시즌.
-  const un=R&&R.unranked&&R.unranked[y];
-  early.hidden=!(rows&&un);
-  if(rows&&un){
-    const g=Object.values(un), n=g.filter(x=>x>0).length;
-    early.innerHTML=`<b>${esc(y)} 시즌 진행 중 — 경기를 치른 팀 ${n}곳 · 팀당 최다 `
-      +`${Math.max(...g)}경기.</b> 한두 경기로 매긴 순위는 순위가 아니라서, 모든 팀이 `
-      +`${esc(R.min_gp)}경기를 치를 때까지 순위 표시를 달지 않습니다. 줄 순서는 값 `
-      +`순서일 뿐 순위가 아닙니다. 0-0 팀은 아직 경기를 치르지 않은 팀이라 기록이 —입니다.`;
-  }
-  if(!rows){
-    cnt.textContent=""; gap.textContent="";
-    out.innerHTML=`<div class="pending">${esc(y)} 시즌 개막 후 집계됩니다</div>`;
-    return;
-  }
-  const cols=TABS[tab].c;
-  const list=Object.keys(rows).slice();
-  list.sort((a,b)=>{
-    if(sort.k==="t") return sort.dir*a.localeCompare(b);
-    const ra=rankOf(rows,a,sort.k), rb=rankOf(rows,b,sort.k);
-    // 순위를 보류한 시즌은 값 순서로만 세웁니다 — 좋은 쪽이 위(방향은 자료 파일).
-    // 순위가 있는 시즌에는 값만 있고 순위가 없는 칸이 없어서 이 길을 안 탑니다.
-    if(ra==null&&rb==null){
-      const va=valOf(rows,a,sort.k), vb=valOf(rows,b,sort.k);
-      if(va!=null&&vb!=null&&va!==vb){
-        const hi=((R.dir||{})[dataKey(sort.k)]||"HIGH")==="HIGH";
-        return sort.dir*(hi?vb-va:va-vb);
-      }
-      if(va!=null&&vb==null) return -1;
-      if(va==null&&vb!=null) return 1;
-    }
-    // 자료가 없는 칸은 방향과 무관하게 항상 아래로 보냅니다.
-    if(ra==null&&rb==null) return a.localeCompare(b);
-    if(ra==null) return 1;
-    if(rb==null) return -1;
-    return sort.dir*(ra-rb);
-  });
-  const arrow=k=>sort.k===k?`<span class="ar">${sort.dir>0?"▲":"▼"}</span>`:"";
-  const sa=k=>sort.k===k?` aria-sort="${sort.dir>0?"ascending":"descending"}"`:"";
-  cnt.textContent=`${list.length}팀`;
-  const missing=cols.filter(([k])=>k!=="rec"&&list.every(t=>valOf(rows,t,k)==null))
-                    .map(([,lb])=>lb);
-  gap.textContent=missing.length
-    ? `이 시즌에는 ${missing.join("·")} 원본 자료가 없어 —로 둡니다.` : "";
-  out.innerHTML=`<div class="tw"><table><thead><tr>`
-    +`<th class="tm" data-k="t"${sa("t")}>팀${arrow("t")}</th>`
-    +cols.map(([k,lb])=>`<th data-k="${k}"${sa(k)}>${esc(lb)}${arrow(k)}</th>`).join("")
-    +`</tr></thead><tbody>`
-    +list.map(t=>`<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
-      +cols.map(([k])=>{
-        // 이 페이지에는 등수 뱃지를 달지 않습니다 — 표가 정렬되므로 순서가
-        // 곧 등수이고, 칸마다 "1위" 를 덧붙이면 숫자를 읽기 어려워집니다.
-        // 보드 왼쪽 열과 코치 패널의 등수는 그대로 둡니다.
-        const txt=cell(rows,t,k);
-        return `<td>${esc(txt)}</td>`;
-      }).join("")+`</tr>`).join("")
-    +`</tbody></table></div>`;
-}
+const draw=drawReg;
 tabs.addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest("button[data-i]");
   if(!b) return;
   tab=+b.dataset.i;
   [...tabs.children].forEach((x,i)=>x.setAttribute("aria-selected",String(i===tab)));
-  sort={k:TABS[tab].reg?"":TABS[tab].d,dir:1};
+  sort={k:"",dir:1};
   draw();
 });
 out.addEventListener("click",e=>{
