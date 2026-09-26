@@ -340,6 +340,10 @@ td.dif{font-weight:700}
 .wrap.wide{max-width:none;padding:24px 28px 56px}
 .wrap.wide .phd{padding-bottom:12px;margin-bottom:16px}
 .wrap.wide .pick{margin-bottom:14px}
+/* 주소가 가리킨 경기를 못 찾았을 때 — 조용히 기본 화면을 열지 않습니다. */
+.hashnote{margin:0 0 12px;padding:.7em .9em;border-radius:6px;
+ border:1px solid rgba(232,179,57,.4);background:rgba(232,179,57,.1);
+ color:#e8b339;font-size:.92em;font-weight:700}
 .wcols{display:grid;
  grid-template-columns:fit-content(16em) min(25%,520px) minmax(0,1fr);
  gap:22px;align-items:start;

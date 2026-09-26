@@ -454,6 +454,7 @@ function gReview(g){
 
 async function gShow(id){
   gSel=id;
+  syncHash(id);
   const g=(GLIST||[]).find(x=>x.id===id);
   const main=document.getElementById("gbox");
   if(!main) return;
@@ -504,6 +505,35 @@ async function gWeek(i){
   gShow(gSel);
 }
 
+// ── 딥링크 (/weekly/#g=<경기 id>) ────────────────────────────────────────
+// 정적 사이트라 질의 문자열 대신 해시를 씁니다. 해시는 기본 선택을 이깁니다 —
+// 기본 주를 먼저 열고 나중에 해시를 적용하면 그 사이에 기본 경기가 한 번
+// 그려졌다가 바뀌어, 눌러서 들어온 사람이 엉뚱한 경기를 먼저 보게 됩니다.
+// 그래서 어느 주를 열지 정하는 단계에서 해시를 먼저 봅니다.
+function hashGid(){
+  const m=/[#&]g=([A-Za-z0-9_-]+)/.exec(location.hash||"");
+  return m?m[1]:null;
+}
+function weekOfGame(gid){
+  for(let i=0;i<WEEKS.length;i++)
+    if((WEEKS[i].games||[]).some(g=>String(g.id)===String(gid))) return i;
+  return -1;
+}
+function hashNote(msg){
+  const box=document.getElementById("wcols");
+  if(!box||!msg) return;
+  const d=document.createElement("div");
+  d.className="hashnote";
+  d.textContent=msg;
+  box.parentNode.insertBefore(d,box);
+}
+// 화면에 보이는 경기를 주소에 적습니다. 누를 때마다 방문 기록을 남기면
+// 뒤로 가기가 한 경기씩 되짚게 되므로 replaceState 를 씁니다.
+function syncHash(gid){
+  if(!gid) return;
+  try{ history.replaceState(null,"",`${location.pathname}#g=${gid}`); }catch(e){}
+}
+
 const wsel=document.getElementById("week"), wsub=document.getElementById("wsub");
 if(!WEEKS.length){
   document.getElementById("wcols").innerHTML=
@@ -518,10 +548,33 @@ if(!WEEKS.length){
   if(def<0) for(let i=0;i<WEEKS.length;i++)
     if((WEEKS[i].games||[]).some(g=>g.done)) def=i;
   if(def<0) def=0;
+  // 해시가 있으면 그 경기가 든 주로 시작합니다(기본값을 덮어씁니다).
+  const want=hashGid();
+  let wantIdx=-1;
+  if(want){
+    wantIdx=weekOfGame(want);
+    if(wantIdx>=0) def=wantIdx;
+    else hashNote(`주소가 가리킨 경기(${want})를 찾지 못해 기본 화면을 엽니다.`);
+  }
   wsel.value=String(def);
   if(wsub) wsub.textContent=`${G.season} 시즌`+(G.stamp?` · 자료 ${G.stamp}`:"");
   wsel.onchange=()=>gWeek(+wsel.value);
-  gWeek(def);
+  // 주를 연 뒤 해시가 가리킨 경기를 고릅니다 — gWeek 이 정한 기본 경기를
+  // 이깁니다. gWeek 은 비동기라 반드시 그 뒤에 걸어야 합니다.
+  gWeek(def).then(()=>{ if(wantIdx>=0) gShow(want); });
+  // 이미 열려 있는 페이지에서 해시만 바뀌는 경우(뒤로/앞으로, 같은 페이지를
+  // 가리키는 링크)는 문서를 새로 읽지 않으므로 위 초기화가 다시 돌지 않습니다.
+  // 그래서 해시 변화를 따로 듣습니다. 우리가 syncHash 로 바꾼 것은 이미 그
+  // 경기를 보고 있는 상태라 아무 일도 하지 않습니다.
+  addEventListener("hashchange",()=>{
+    const gid=hashGid();
+    if(!gid||String(gid)===String(gSel)) return;
+    const i=weekOfGame(gid);
+    if(i<0){ hashNote(`주소가 가리킨 경기(${gid})를 찾지 못했습니다.`); return; }
+    if(+wsel.value===i){ gShow(gid); return; }
+    wsel.value=String(i);
+    gWeek(i).then(()=>gShow(gid));
+  });
 }
 
 // 목록 클릭은 칸에 위임합니다 — 목록을 다시 그려도 배선이 안 끊깁니다.
