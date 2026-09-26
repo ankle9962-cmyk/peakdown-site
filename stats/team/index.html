@@ -18,12 +18,14 @@
   <span class="sub">정규시즌 · 32팀 순위</span><span class="cnt" id="cnt"></span></div>
 <div class="pick"><label for="season">시즌</label><select id="season"></select></div>
 <div class="tabs" id="tabs" role="tablist"></div>
+<div class="splits" id="splits" hidden></div>
 <div class="early" id="early" hidden></div>
 <div id="out"></div>
 <p class="note" style="margin-top:18px">순위는 그 시즌 리그 전체에서 매깁니다.
   칸마다 좋은 쪽이 1위입니다 — 실점·허용야드는 적을수록, 색·테이크어웨이는
   많을수록 1위입니다. 열 제목을 누르면 그 칸으로 정렬합니다.
   <span id="gap"></span></p>
+<p class="credit">데이터: <a href="https://github.com/nflverse/nflverse-data" rel="noopener noreferrer" target="_blank">nflverse</a> (CC BY 4.0) · 차팅: FTN Data via nflverse (CC BY-SA 4.0)</p>
 </div>
 <script>
 (function(){
@@ -51,9 +53,152 @@
 <script>
 const TEAMS={"ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens", "BUF": "Buffalo Bills", "CAR": "Carolina Panthers", "CHI": "Chicago Bears", "CIN": "Cincinnati Bengals", "CLE": "Cleveland Browns", "DAL": "Dallas Cowboys", "DEN": "Denver Broncos", "DET": "Detroit Lions", "GB": "Green Bay Packers", "HOU": "Houston Texans", "IND": "Indianapolis Colts", "JAX": "Jacksonville Jaguars", "KC": "Kansas City Chiefs", "LA": "Los Angeles Rams", "LAC": "Los Angeles Chargers", "LV": "Las Vegas Raiders", "MIA": "Miami Dolphins", "MIN": "Minnesota Vikings", "NE": "New England Patriots", "NO": "New Orleans Saints", "NYG": "New York Giants", "NYJ": "New York Jets", "PHI": "Philadelphia Eagles", "PIT": "Pittsburgh Steelers", "SEA": "Seattle Seahawks", "SF": "San Francisco 49ers", "TB": "Tampa Bay Buccaneers", "TEN": "Tennessee Titans", "WAS": "Washington Commanders"};
 const SEASONS=[1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-const TABS=[{"n": "기본", "c": [["rec", "승-패"], ["pf", "득점"], ["off_yds", "총야드"], ["off_pass", "패싱야드"], ["off_rush", "러싱야드"], ["pa", "실점"], ["def_yds", "허용야드"], ["def_pass", "허용패싱"], ["def_rush", "허용러싱"]], "d": "rec"}, {"n": "공격", "c": [["pf", "득점"], ["off_yds", "총야드"], ["off_epa", "플레이당 EPA"], ["off_third", "서드다운 갱신율"], ["off_rz", "레드존 TD 성공률"], ["off_giveaway", "턴오버"]], "d": "pf"}, {"n": "패스", "c": [["off_pass", "패싱야드"], ["off_pass_att", "패스시도"], ["off_cmp_pct", "패스 성공률"], ["off_pass_td", "패싱 TD"], ["off_int", "인터셉션"], ["off_rating", "패서레이팅"], ["off_adot", "ADOT"]], "d": "off_pass"}, {"n": "러닝", "c": [["off_rush", "러싱야드"], ["off_rush_att", "러싱시도"], ["off_rush_ypc", "시도당 러싱야드"], ["off_rush_td", "러싱 TD"], ["off_bp_run", "빅플레이 러싱 10+"]], "d": "off_rush"}, {"n": "수비", "c": [["pa", "실점"], ["def_yds", "허용야드"], ["def_epa", "허용 플레이당 EPA"], ["def_third", "서드다운 방어율"], ["def_rz", "레드존 방어율"], ["def_takeaway", "테이크어웨이"]], "d": "pa"}, {"n": "패스(수비)", "c": [["def_pass", "허용 패싱야드"], ["def_cmp_pct", "허용 패스 성공률"], ["def_pass_td", "허용 패싱 TD"], ["def_ints", "인터셉션"], ["def_sk", "색"]], "d": "def_pass"}, {"n": "러닝(수비)", "c": [["def_rush", "허용 러싱야드"], ["def_rush_ypc", "허용 시도당 러싱야드"], ["def_rush_td", "허용 러싱 TD"]], "d": "def_rush"}];
+const TABS=[{"n": "기본", "c": [["rec", "승-패"], ["pf", "득점"], ["off_yds", "총야드"], ["off_pass", "패싱야드"], ["off_rush", "러싱야드"], ["pa", "실점"], ["def_yds", "허용야드"], ["def_pass", "허용패싱"], ["def_rush", "허용러싱"]], "d": "rec"}, {"n": "공격", "c": [["pf", "득점"], ["off_yds", "총야드"], ["off_epa", "플레이당 EPA"], ["off_third", "서드다운 갱신율"], ["off_rz", "레드존 TD 성공률"], ["off_giveaway", "턴오버"]], "d": "pf"}, {"n": "패스", "c": [["off_pass", "패싱야드"], ["off_pass_att", "패스시도"], ["off_cmp_pct", "패스 성공률"], ["off_pass_td", "패싱 TD"], ["off_int", "인터셉션"], ["off_rating", "패서레이팅"], ["off_adot", "ADOT"]], "d": "off_pass"}, {"n": "러닝", "c": [["off_rush", "러싱야드"], ["off_rush_att", "러싱시도"], ["off_rush_ypc", "시도당 러싱야드"], ["off_rush_td", "러싱 TD"], ["off_bp_run", "빅플레이 러싱 10+"]], "d": "off_rush"}, {"n": "수비", "c": [["pa", "실점"], ["def_yds", "허용야드"], ["def_epa", "허용 플레이당 EPA"], ["def_third", "서드다운 방어율"], ["def_rz", "레드존 방어율"], ["def_takeaway", "테이크어웨이"]], "d": "pa"}, {"n": "패스(수비)", "c": [["def_pass", "허용 패싱야드"], ["def_cmp_pct", "허용 패스 성공률"], ["def_pass_td", "허용 패싱 TD"], ["def_ints", "인터셉션"], ["def_sk", "색"]], "d": "def_pass"}, {"n": "러닝(수비)", "c": [["def_rush", "허용 러싱야드"], ["def_rush_ypc", "허용 시도당 러싱야드"], ["def_rush_td", "허용 러싱 TD"]], "d": "def_rush"}, {"n": "효율", "reg": true, "g": "효율"}, {"n": "플레이콜", "reg": true, "g": "플레이콜"}, {"n": "드라이브", "reg": true, "g": "드라이브"}, {"n": "수비 차팅", "reg": true, "g": "수비 차팅"}, {"n": "스페셜팀", "reg": true, "g": "스페셜팀"}];
 const UNIT={"off_third": "%", "off_rz": "%", "off_cmp_pct": "%", "def_third": "%", "def_rz": "%", "def_cmp_pct": "%"};
 const R=(typeof window.TEAM_SEASON_RANKS!=="undefined")?window.TEAM_SEASON_RANKS:null;
+
+// 받아 온 것은 두 번 받지 않습니다.
+const REGC={reg:null, files:{}};
+function getJSON(url){
+  return fetch(url,{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+}
+function regLoad(){
+  if(REGC.reg) return Promise.resolve(REGC.reg);
+  return getJSON("/splits/registry.json").then(j=>(REGC.reg=j));
+}
+function splitLoad(y,sp){
+  const k=y+"|"+sp;
+  if(REGC.files[k]) return Promise.resolve(REGC.files[k]);
+  return getJSON(`/splits/team_${y}_${sp}.json`).then(j=>(REGC.files[k]=j));
+}
+// 등록부 순위 — 방향은 등록부가 정하고, 동점은 보드·기존 표와 같은 1,1,3
+// 방식에 "공동" 을 답니다. 표본이 얇은 칸(min_n)은 순위를 안 답니다.
+function regRank(rows, stat, teams){
+  const dir=stat.dir;
+  if(dir==="NONE") return {r:{},tied:[]};
+  const ok=teams.filter(t=>regVal(rows,t,stat)!=null && regOK(rows,t,stat));
+  ok.sort((a,b)=>{
+    const va=regVal(rows,a,stat), vb=regVal(rows,b,stat);
+    return dir==="HIGH"?vb-va:va-vb;
+  });
+  const r={}; let prev=null, pr=0;
+  ok.forEach((t,i)=>{
+    const v=regVal(rows,t,stat);
+    const rk=(prev!==null&&v===prev)?pr:i+1;
+    prev=v; pr=rk; r[t]=rk;
+  });
+  const cnt={}; Object.values(r).forEach(x=>cnt[x]=(cnt[x]||0)+1);
+  return {r, tied:Object.keys(cnt).filter(x=>cnt[x]>1).map(Number)};
+}
+const regSide=(rows,t,stat)=>((rows[t]||{})[stat.sd==="def"?"def":(stat.k.slice(0,3)==="st_"?"st":"off")])||{};
+function regVal(rows,t,stat){
+  const v=regSide(rows,t,stat)[stat.k];
+  return (v===undefined||v===null)?null:v;
+}
+// 최소 표본 — 등록부의 (세는 대상, 개수). 세는 대상은 파일이 같이 실어 보낸
+// _n(센 플레이) · _db(드롭백) 같은 칸입니다.
+const REG_NKEY={plays:"_n",dropbacks:"_db",rushes:"_ru",drives:"_dr",games:"_g",
+  pa_plays:"_pa",rpo_plays:"_rpo",blitz:"_blitz",light:"_light",heavy:"_heavy",
+  fg_u30:"_fg_u30",fg_30:"_fg_30",fg_40:"_fg_40",fg_50:"_fg_50",xp:"_xp",
+  punts:"_punts",kr:"_kr",pr:"_pr"};
+function regN(rows,t,stat){
+  const box=regSide(rows,t,stat), nk=REG_NKEY[stat.min[0]]||"_n";
+  const v=box[nk];
+  return (v===undefined||v===null)?0:v;
+}
+const regOK=(rows,t,stat)=>regN(rows,t,stat)>=stat.min[1];
+
+function drawReg(){
+  const y=sel.value, g=TABS[tab].g;
+  // 스플릿을 걸 수 없는 묶음(스페셜팀)은 늘 전체로 봅니다 — 조건이 안 붙는
+  // 플레이라서, 다운·쿼터를 고른 채로 두면 빈 칸만 나옵니다.
+  const noSp=((REGC.reg||{}).nosplit||[]).indexOf(g)>=0;
+  const sp=noSp?"all":curSplit;
+  out.innerHTML=`<div class="pending">불러오는 중…</div>`;
+  Promise.all([regLoad(), splitLoad(y,sp)]).then(([reg,file])=>{
+    if(!reg){ out.innerHTML=`<div class="pending">등록부를 못 받았습니다.</div>`; return; }
+    paintSplits(reg, y, noSp2(reg,g));
+    if(!file){ out.innerHTML=`<div class="pending">${esc(y)} 시즌 · ${esc(sp)} 자료가 없습니다.</div>`; return; }
+    const rows=file.teams, teams=Object.keys(rows).sort();
+    const stats=reg.stats.filter(s=>s.g===g && Number(y)>=s.first);
+    const hidden=reg.stats.filter(s=>s.g===g && Number(y)<s.first);
+    if(!stats.length){
+      out.innerHTML=`<div class="pending">${esc(y)} 시즌에는 이 묶음의 자료가 없습니다 —`
+        +` ${esc(hidden.map(s=>s.lb).join(" · "))} 는 ${esc(String((hidden[0]||{}).first||""))} 시즌부터입니다.</div>`;
+      cnt.textContent=""; return;
+    }
+    // 순위·동점은 칸마다 한 번만 셉니다.
+    const RK={}; stats.forEach(s=>{ RK[s.k+"|"+s.sd]=regRank(rows,s,teams); });
+    const sk=sort.k, ss=stats.find(s=>(s.k+"|"+s.sd)===sk)||stats[0];
+    const list=teams.slice().sort((a,b)=>{
+      const va=regVal(rows,a,ss), vb=regVal(rows,b,ss);
+      if(va==null&&vb==null) return a.localeCompare(b);
+      if(va==null) return 1;
+      if(vb==null) return -1;
+      return sort.dir*(ss.dir==="LOW"?(va-vb):(vb-va));
+    });
+    const arrow=k=>sort.k===k?`<span class="ar">${sort.dir>0?"▲":"▼"}</span>`:"";
+    cnt.textContent=`${list.length}팀`;
+    const ftn=stats.some(s=>s.src==="ftn");
+    const head=`<tr><th class="tm" data-k="t">팀</th><th class="rn">n</th>`
+      +stats.map(s=>`<th data-k="${esc(s.k+"|"+s.sd)}" title="${esc(s.f+(s.model?" · nflverse 모델값":""))}"
+          >${esc(s.lb)}${arrow(s.k+"|"+s.sd)}</th>`).join("")+`</tr>`;
+    const body=list.map(t=>{
+      const n=(rows[t].off||{})._n||0, dn=(rows[t]["def"]||{})._n||0;
+      return `<tr><td class="tm">${esc(TEAMS[t]||t)}</td>`
+        +`<td class="rn" title="센 플레이 수(공격/수비)">${n}/${dn}</td>`
+        +stats.map(s=>{
+          const v=regVal(rows,t,s);
+          if(v==null) return `<td>—</td>`;
+          const thin=!regOK(rows,t,s);
+          const txt=(s.dec?Number(v).toFixed(s.dec):Math.round(v).toLocaleString())+(s.u||"");
+          const R2=RK[s.k+"|"+s.sd], rk=R2.r[t];
+          const rtx=rk?((R2.tied.indexOf(rk)>=0?"공동 ":"")+rk+"위"):"";
+          return `<td class="${thin?"thin":""}" title="${esc("n="+regN(rows,t,s))}">${esc(txt)}`
+            +(rk?`<span class="rk${rk<=5?" hot":""}">${esc(rtx)}</span>`:"")+`</td>`;
+        }).join("")+`</tr>`;
+    }).join("");
+    out.innerHTML=`<div class="tw"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`
+      +(ftn?`<p class="lic">이 표에는 FTN 차팅(2022~)에서 온 값이 들어 있습니다 —
+          이 표는 <b>CC BY-SA 4.0</b> 으로 제공됩니다. 차팅: FTN Data via nflverse.</p>`:"")
+      +(hidden.length?`<p class="lic">${esc(hidden.map(s=>s.lb).join(" · "))} 는
+          ${esc(String((hidden[0]||{}).first||""))} 시즌부터라 이 시즌에는 칸이 없습니다.</p>`:"");
+    gap.textContent="";
+  });
+}
+// 스플릿 막대 — 등록부가 준 목록 그대로. FTN 스플릿은 그 시즌에 FTN 이 있을 때만.
+let curSplit="all";
+const noSp2=(reg,g)=>((reg||{}).nosplit||[]).indexOf(g)>=0;
+function paintSplits(reg,y,noSp){
+  const box=document.getElementById("splits");
+  if(!box) return;
+  if(noSp){
+    box.hidden=false;
+    box.innerHTML=`<span class="sgrp"><i>스플릿</i><span class="snote">이 묶음은
+      스크리미지 플레이가 아니라서 상황별로 나누지 않습니다 — 전체만 냅니다.</span></span>`;
+    return;
+  }
+  box.hidden=false;
+  const ok=reg.splits.filter(s=>!s.ftn || Number(y)>=2022);
+  const grp=[];
+  ok.forEach(s=>{ const g=grp.find(x=>x[0]===s.g); (g?g[1]:(grp.push([s.g,[]]),grp[grp.length-1][1])).push(s); });
+  box.innerHTML=grp.map(([g,ss])=>`<span class="sgrp"><i>${esc(g)}</i>`
+    +ss.map(s=>`<button data-sp="${esc(s.k)}" aria-pressed="${String(s.k===curSplit)}"
+        >${esc(s.lb)}</button>`).join("")+`</span>`).join("")
+    +`<span class="sgrp"><i>상대 팀</i><select id="oppsel"><option value="">상대 팀…</option>`
+    +Object.keys(TEAMS).sort().map(t=>`<option value="opp_${esc(t)}"${("opp_"+t)===curSplit?" selected":""}
+        >${esc(TEAMS[t]||t)}</option>`).join("")+`</select></span>`;
+}
+document.getElementById("splits").addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("button[data-sp]");
+  if(!b) return;
+  curSplit=b.dataset.sp; draw();
+});
+document.getElementById("splits").addEventListener("change",e=>{
+  if(e.target.id!=="oppsel") return;
+  curSplit=e.target.value||"all"; draw();
+});
+
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sel=document.getElementById("season"), out=document.getElementById("out"),
       cnt=document.getElementById("cnt"), tabs=document.getElementById("tabs"),
@@ -79,6 +224,9 @@ function cell(rows,t,k){
 function rankOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i+1]; }
 function valOf(rows,t,k){ const i=idx(dataKey(k)); return i<0?null:rows[t][2*i]; }
 function draw(){
+  // 등록부 탭은 스플릿 파일에서 그립니다 — 기존 탭은 예전 그대로입니다.
+  if(TABS[tab]&&TABS[tab].reg){ early.hidden=true; drawReg(); return; }
+  document.getElementById("splits").hidden=true;
   const y=sel.value, rows=R&&R.seasons[y];
   // 순위를 보류한 시즌(시즌 초) — {팀: 치른 경기 수}. 없으면 순위가 있는 시즌.
   const un=R&&R.unranked&&R.unranked[y];
@@ -145,7 +293,7 @@ tabs.addEventListener("click",e=>{
   if(!b) return;
   tab=+b.dataset.i;
   [...tabs.children].forEach((x,i)=>x.setAttribute("aria-selected",String(i===tab)));
-  sort={k:TABS[tab].d,dir:1};
+  sort={k:TABS[tab].reg?"":TABS[tab].d,dir:1};
   draw();
 });
 out.addEventListener("click",e=>{

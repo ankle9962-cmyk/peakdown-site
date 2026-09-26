@@ -893,8 +893,12 @@ const TS=()=>TSALL[tseason]||{};
 // tied 는 그 항목에서 둘 이상이 나눠 가진 등수 목록입니다.
 const rkTxt=(r,tied)=>(r?((tied&&tied.indexOf(r)>=0?"공동 ":"")+r+"위"):"");
 const tsTied=(side,key)=>(((TS()._tied||{})[side]||{})[key]||null);
-// 시즌이 끝난 뒤에야 공개되는 자료(PFR) — 빈 칸에 이유를 답니다.
-const NA_WHY="시즌 종료 후 공개되는 자료";
+// 값이 비는 칸의 이유. 예전에는 "시즌이 끝나야 공개된다" 고 적었는데,
+// 2026-09-26 에 확인해 보니 절반만 맞는 말이었습니다 — PFR 주간판에는
+// 시즌 중에도 자료가 있고, 우리가 읽는 시즌 합계판만 시즌 뒤에 만들어집니다.
+// 게다가 이 칸들은 Sports Reference 자료라 공개 사이트에 쓸 수 없습니다
+// (SOURCES.md). 칸 자체를 걷어낼 때까지 설명만이라도 사실대로 둡니다.
+const NA_WHY="이 칸의 출처(PFR)는 사이트에서 쓸 수 없어 비워 둡니다 — SOURCES.md";
 // 보드도 시즌을 따라갑니다 — 뎁스차트가 있는 시즌이면 그 시즌 로스터를 씁니다.
 // 뎁스차트가 없는 시즌은 가장 가까운 시즌 보드로 떨어집니다.
 const boardYear=()=>DATA_BY[tseason]?tseason:Object.keys(DATA_BY).sort().pop();
