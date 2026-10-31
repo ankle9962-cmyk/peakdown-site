@@ -193,6 +193,18 @@ td .rk.hot{color:var(--hot)}
 @media(max-width:640px){
   .mdt th,.mdt td{padding:6px 9px}
 }
+/* ── 본문 속 사진 ────────────────────────────────────────────────────── */
+.img{margin:0 0 1em;max-width:100%}
+.img a{display:block;line-height:0}
+.img img{display:block;max-width:100%;height:auto;border-radius:8px;
+ border:1px solid var(--line);background:var(--board)}
+.img figcaption{margin-top:.5em;font-size:.86em;line-height:1.55;color:var(--dim)}
+.img figcaption strong{color:var(--ink)}
+.img figcaption a{color:#7ea8ff}
+.imgerr{display:inline-block;background:rgba(255,77,79,.10);color:var(--hot);
+ border:1px solid rgba(255,77,79,.35);border-radius:6px;padding:2px 8px;
+ font-size:13px;font-weight:600}
+.imgerr code{background:transparent;color:inherit;padding:0;overflow-wrap:anywhere}
 td.pos{color:var(--dim);font-weight:600}
 .cnt{color:var(--dim);font-size:13px;font-weight:600;margin-left:auto}
 /* 선수 스탯 — 시즌 선택 옆에 부문 탭을 붙입니다. 좁아지면 탭이 아래로
