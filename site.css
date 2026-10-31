@@ -195,8 +195,8 @@ td .rk.hot{color:var(--hot)}
 }
 /* ── 본문 속 사진 ────────────────────────────────────────────────────── */
 .img{margin:0 0 1em;max-width:100%}
-.img a{display:block;line-height:0}
-.img img{display:block;max-width:100%;height:auto;border-radius:8px;
+.img>a{display:block;line-height:0}      /* 그림을 감싼 링크만 — 캡션 속 링크는 글자 그대로 */
+.img img{display:block;max-width:100%;max-height:80vh;width:auto;height:auto;border-radius:8px;
  border:1px solid var(--line);background:var(--board)}
 .img figcaption{margin-top:.5em;font-size:.86em;line-height:1.55;color:var(--dim)}
 .img figcaption strong{color:var(--ink)}
