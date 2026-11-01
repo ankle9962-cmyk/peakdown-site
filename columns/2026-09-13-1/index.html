@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>26 시즌 트레이드 · 픽다운</title>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<button class="navtog" id="navtog" type="button" aria-label="메뉴 열기"
+        aria-expanded="false" aria-controls="sidenav"><span></span><span></span><span></span></button>
+<div class="navov" id="navov"></div>
+<nav class="sidenav" id="sidenav" aria-label="사이트 메뉴">
+  <a href="/">홈</a><a href="/weekly/">주차별 자료</a><a href="/news/">주요 뉴스</a><a href="/columns/" aria-current="page">칼럼/분석</a><a href="/standings/">26시즌 팀 순위</a><a href="/stats/team/">팀 스탯</a><a href="/stats/player/">선수 스탯</a><a href="/teams/">팀별 자료</a>
+</nav>
+<div class="wrap">
+<article class="cpost"><h1>26 시즌 트레이드</h1><div class="cmeta"><time datetime="2026-11-01">2026-11-01</time></div><div class="cbody"><figure class="img"><a href="/images/column-2026-09-13-1-b3c9e0ec.webp" target="_blank" rel="noopener noreferrer"><img src="/images/column-2026-09-13-1-b3c9e0ec.webp" alt="" loading="lazy"></a></figure><figure class="img"><a href="/images/column-2026-09-13-1-378aa63d.webp" target="_blank" rel="noopener noreferrer"><img src="/images/column-2026-09-13-1-378aa63d.webp" alt="" loading="lazy"></a></figure><figure class="img"><a href="/images/column-2026-09-13-1-a5bae413.webp" target="_blank" rel="noopener noreferrer"><img src="/images/column-2026-09-13-1-a5bae413.webp" alt="" loading="lazy"></a></figure></div></article><a class="cback" href="/columns/">← 칼럼 목록으로</a>
+<p class="credit">데이터: <a href="https://github.com/nflverse/nflverse-data" rel="noopener noreferrer" target="_blank">nflverse</a> (CC BY 4.0) · 차팅: FTN Data via nflverse (CC BY-SA 4.0)</p>
+</div>
+<script>
+(function(){
+  var t=document.getElementById('navtog'),
+      n=document.getElementById('sidenav'),
+      o=document.getElementById('navov');
+  if(!t||!n||!o) return;
+  function set(open){
+    t.setAttribute('aria-expanded',String(open));
+    t.setAttribute('aria-label',open?'메뉴 닫기':'메뉴 열기');
+    n.classList.toggle('on',open);
+    o.classList.toggle('on',open);
+    if(open){ var a=n.querySelector('a'); if(a) a.focus(); } else { t.focus(); }
+  }
+  t.addEventListener('click',function(){
+    set(t.getAttribute('aria-expanded')!=='true');
+  });
+  o.addEventListener('click',function(){ set(false); });
+  addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&t.getAttribute('aria-expanded')==='true') set(false);
+  });
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1acd400b59d944b49304176d9cce05c0"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
