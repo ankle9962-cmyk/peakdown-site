@@ -552,6 +552,115 @@ td.dif{font-weight:700}
 .ptr.pthr{border-bottom:1px solid var(--line)}
 .ptr.pthr .ptd{font-size:.72em;font-weight:700;color:#4a5878;letter-spacing:.03em}
 .ptr:nth-child(even):not(.pthr){background:rgba(255,255,255,.022)}
+/* 선수 패널이 있는 줄 — 이름에 옅은 밑줄, 누르면 패널(content_render.PANEL_JS). */
+.ptr.clk{cursor:pointer}
+.ptr.clk .pnm{color:#c3cddf;text-decoration:underline;text-decoration-color:rgba(126,168,255,.45);
+ text-underline-offset:3px}
+.ptr.clk:hover .pnm{color:#7ea8ff}
+.ptr.clk:focus-visible{outline:2px solid #4a5f8f;outline-offset:-2px}
 /* 표 밑에 붙는 잔글씨 — net/gross 같은 주의사항입니다. */
 .pnote{padding:.5em .25em .2em;font-size:.76em;color:var(--dim);line-height:1.6}
 .pnote b{color:#c3cddf;font-weight:700}
+
+.bxov{position:fixed;inset:0;z-index:230;background:rgba(4,7,14,.74);display:none;
+ align-items:center;justify-content:center;padding:16px}
+.bxov.on{display:flex}
+.bxpnl{position:relative;background:#111726;border:1px solid #243049;border-radius:12px;
+ width:min(1440px,96vw);max-height:94vh;overflow:auto;container-type:inline-size;
+ color:#f1f4fa;font-family:inherit;--tc:#2b5fd9}
+.bxpnl .x{position:absolute;top:16px;right:20px;background:none;border:0;color:#7d8ca8;
+ font:inherit;font-size:30px;line-height:1;cursor:pointer;z-index:2}
+.bxpnl .x:hover{color:#f1f4fa}
+.bxin{display:flex;gap:28px;align-items:flex-start;padding:28px 30px 30px}
+.bxload{padding:40px;color:#7d8ca8;font-weight:700}
+.bxpnl .pf{width:240px;flex:none}
+.bxpnl .pshot{position:relative;width:100%;aspect-ratio:4/5;border:1px solid #243049;border-radius:10px;
+ overflow:hidden;background:#0e1422;display:grid;place-items:center}
+.bxpnl .pshot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;
+ display:block;background:#0e1422}
+.bxpnl .pshot .gh{font-size:64px;font-weight:800;color:#2a3550}
+.bxpnl .pname{margin-top:14px;font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.bxpnl .psmp{display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid #6b5a1e;
+ border-radius:6px;font-size:12px;font-weight:800;color:#e3c45a;vertical-align:4px;letter-spacing:.04em}
+.bxpnl .ppos{margin-top:7px;font-size:16px;font-weight:700;color:var(--tc);letter-spacing:.06em}
+.bxpnl .pline{margin-top:6px;font-size:15px;font-weight:600;color:#7d8ca8;line-height:1.45}
+.bxpnl .pgame{margin-top:14px;padding:8px 11px;border:1px solid #243049;border-radius:8px;
+ font-size:14px;color:#7d8ca8;font-weight:700}
+.bxpnl .pgame b{color:#f1f4fa}
+.bxpnl .pmain{flex:1;min-width:0}
+.bxpnl .pfil{display:flex;flex-wrap:wrap;gap:8px 18px;padding:0 40px 12px 0;margin-bottom:14px;
+ border-bottom:2px solid var(--tc)}
+.bxpnl .pfg{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.bxpnl .pfg>span{font-size:13px;color:#7d8ca8;font-weight:700;letter-spacing:.06em;margin-right:3px}
+.bxpnl .chip{background:#182135;border:1px solid #243049;color:#7d8ca8;font:inherit;font-size:13.5px;
+ font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
+.bxpnl .chip[aria-pressed="true"]{color:#f1f4fa;border-color:var(--tc);box-shadow:inset 0 0 0 1px var(--tc)}
+.bxpnl .pbody{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,430px);gap:24px;
+ align-items:start}
+.bxpnl .pbody.k-qb{grid-template-columns:minmax(0,1fr) minmax(340px,540px)}
+.bxpnl table.pst{width:100%;border-collapse:collapse}
+.bxpnl .pst th,.bxpnl .pst td{padding:9px 10px;border-bottom:1px solid #243049;font-size:16px;
+ line-height:1.3;text-align:right;white-space:nowrap}
+.bxpnl .pst thead th{font-size:13px;color:#7d8ca8;font-weight:700;letter-spacing:.06em;padding-top:0}
+.bxpnl .pst thead th b{display:block;color:#f1f4fa;font-size:16px;letter-spacing:0}
+.bxpnl .pst th:first-child{text-align:left;color:#7d8ca8;font-weight:600}
+.bxpnl .pst td{font-variant-numeric:tabular-nums;font-weight:700}
+.bxpnl .pst td small{font-size:12.5px;color:#7d8ca8;font-weight:600;margin-left:4px}
+.bxpnl .pst td.hot{color:#ff4d4f}
+.bxpnl .pst td.na{color:#3c4761}
+.bxpnl .pst .rk{font-size:13px;color:#7d8ca8;font-weight:600;margin-left:5px}
+.bxpnl .pst tr.gh th{padding:16px 10px 6px;font-size:16.5px;font-weight:800;color:#f1f4fa;
+ border-bottom:1px solid rgba(255,255,255,.13)}
+.bxpnl .pst tr.gh th small{font-size:12.5px;color:#7d8ca8;font-weight:600;margin-left:6px}
+.bxpnl .pst tr.gh td{border-bottom:0}
+.bxpnl .pst tbody tr.gh:first-child th{padding-top:4px}
+.bxpnl .pscope{display:flex;gap:6px;margin-bottom:8px}
+.bxpnl .pmapbox{position:relative}
+.bxpnl svg.pfld{display:block;width:100%;height:auto;border-radius:10px;border:1px solid #243049;
+ background:#0c1220}
+.bxpnl svg.pfld .hb{cursor:pointer;transition:opacity .12s}
+.bxpnl svg.pfld.hov .hb:not(.on){opacity:.16}
+.bxpnl svg.pfld.hov .hb.on{opacity:1}
+.bxpnl .ptip{position:absolute;pointer-events:none;z-index:5;background:#0b1120;border:1px solid #33415f;
+ border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;min-width:190px;
+ box-shadow:0 10px 30px rgba(0,0,0,.5);display:none}
+.bxpnl .ptip .tt{font-weight:800;font-size:14.5px;margin-bottom:6px}
+.bxpnl .ptip .tt i{font-style:normal;color:#7d8ca8;font-weight:700;font-size:12.5px;margin-left:6px}
+.bxpnl .ptip table{border-collapse:collapse;width:100%}
+.bxpnl .ptip td{padding:2px 0;font-variant-numeric:tabular-nums}
+.bxpnl .ptip td:first-child{color:#7d8ca8;font-weight:600;padding-right:16px}
+.bxpnl .ptip td:last-child{text-align:right;font-weight:800}
+/* 패스맵 — 3 구역(해시 사이·심·넘버 바깥) × 3 깊이. 칸마다 합계, 그 밑에 받은 선수. */
+.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:5px}
+.bxpnl .pzh{font-size:12.5px;color:#7d8ca8;font-weight:800;text-align:center;padding:2px 0 4px}
+.bxpnl .pzd{font-size:12.5px;color:#7d8ca8;font-weight:800;writing-mode:vertical-rl;
+ transform:rotate(180deg);text-align:center;padding:0 2px}
+.bxpnl .pzc{border:1px solid #243049;border-radius:8px;padding:7px 8px;min-height:84px;min-width:0}
+.bxpnl .pzc b{display:block;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.bxpnl .pzc s{display:block;text-decoration:none;font-size:12px;color:#aab5cc;font-weight:700;margin-top:1px}
+.bxpnl .pzr{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;min-width:0}
+.bxpnl .pzr img,.bxpnl .pzr .gh{width:20px;height:20px;border-radius:50%;object-fit:cover;
+ object-position:50% 15%;flex:none;background:#1b2438;font-size:10px;display:grid;place-items:center;color:#7d8ca8}
+.bxpnl .pzr em{font-style:normal;color:#c3cddf;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.bxpnl .pzr i{font-style:normal;color:#7d8ca8;font-weight:700;margin-left:auto;white-space:nowrap;
+ font-variant-numeric:tabular-nums}
+.bxpnl .pzlos{grid-column:2/-1;border-top:2px solid var(--tc);margin-top:2px;font-size:11px;
+ color:var(--tc);font-weight:800;padding-top:2px}
+.bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
+/* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
+   프로필이 위로 올라가 한 줄 머리가 됩니다. */
+@container (max-width:1040px){
+  .bxpnl .pbody,.bxpnl .pbody.k-qb{grid-template-columns:minmax(0,1fr)}
+  .bxpnl .pmap{max-width:520px}
+  .bxpnl .pf{width:200px}
+}
+@container (max-width:700px){
+  .bxin{flex-direction:column;gap:14px;padding:22px 16px 24px}
+  .bxpnl .pf{width:100%;display:grid;grid-template-columns:92px minmax(0,1fr);gap:0 14px;
+   align-items:start;padding-right:36px}
+  .bxpnl .pshot{grid-row:1/span 6}
+  .bxpnl .pname{margin-top:0;font-size:22px}
+  .bxpnl .pgame{margin-top:8px}
+  .bxpnl .pfil{padding-right:0}
+  .bxpnl .pst th,.bxpnl .pst td{padding:8px 6px;font-size:14.5px}
+}

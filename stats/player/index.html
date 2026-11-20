@@ -21,13 +21,6 @@
   <div class="tabs" id="tabs" role="tablist"></div>
 </div>
 <div id="out"></div>
-<p class="note" id="qual" style="margin-top:18px"></p>
-<p class="note" id="gap"></p>
-<p class="note dfn" id="defnote" style="display:none">수비 기록은 nflverse 선수 스탯
-  릴리스에서 그대로 옵니다. 이 릴리스는 경기의 플레이별 자료(pbp)를 집계해 만든
-  것이라 태클·색 수가 NFL 공식 게임북 집계와 다를 수 있습니다 — 2003년 마이클
-  스트레이핸의 색이 여기서는 18.0, 공식 기록은 18.5인 식입니다. TFL 은 그 시즌
-  플레이에 잡힌 태클 손실야드 기준이고, PD 는 패스 디펜스입니다.</p>
 </div>
 <script>
 (function(){
@@ -61,9 +54,7 @@ const P=(typeof window.PLAYER_SEASON!=="undefined")?window.PLAYER_SEASON:null;
 <script>
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sel=document.getElementById("season"), out=document.getElementById("out"),
-      cnt=document.getElementById("cnt"), qual=document.getElementById("qual"),
-      tabs=document.getElementById("tabs"), gap=document.getElementById("gap"),
-      note=document.getElementById("defnote");
+      cnt=document.getElementById("cnt"), tabs=document.getElementById("tabs");
 const KEYS=Object.keys(CATS);
 let tab=KEYS[0];                       // 패스가 기본
 const sort={};                         // 부문마다 정렬 상태를 따로 둡니다
@@ -86,13 +77,12 @@ function state(){ return sort[tab] || {k:CATS[tab][1], dir:firstDir(CATS[tab][1]
 function draw(){
   const y=sel.value, s=P&&P.seasons[y];
   const [lb,,cols]=CATS[tab];
-  note.style.display = (tab==="def") ? "block" : "none";
   // 진행 중인 시즌은 자격 기준을 치른 경기 수에 비례해 줄인 값(qual_by)을 씁니다.
-  // 그 사실을 알리던 노란 안내 상자는 걷어냈고, 기준 자체와 아래 자격 줄은 그대로입니다.
+  // 표 밑 안내 줄은 걷어냈고(줄글 없음), 기준은 머리의 인원 옆 꼬리표로만 남깁니다.
   const qb=(P.qual_by||{})[y];
   if(!s){
-    cnt.textContent=""; qual.textContent=""; gap.textContent="";
-    out.innerHTML=`<div class="pending">${esc(y)} 시즌 개막 후 집계됩니다</div>`;
+    cnt.textContent="";
+    out.innerHTML=`<div class="pending">${esc(y)} 개막 전</div>`;
     return;
   }
   let rows=(s[tab]||[]).slice();
@@ -127,17 +117,8 @@ function draw(){
              : r[k].toLocaleString(undefined,{maximumFractionDigits:2})) : esc(r[k]))}</td>`).join("")
       +`</tr>`).join("")
     +`</tbody></table></div>`;
-  cnt.textContent=`${rows.length}명`;
   const q={...P.qual[tab], ...(qb&&qb[tab]!=null?{min:qb[tab]}:{})}, u=UNIT[tab]||"";
-  qual.textContent = (tab==="def")
-    ? `자격 ${q.min}${u} 이상 · 칸마다 상위 ${P.deftop}명을 모아 싣습니다`
-      +` — 어느 칸으로 정렬해도 그 칸 1위가 표 안에 있습니다.`
-      +` 열 제목을 누르면 정렬합니다.`
-    : `자격 ${q.min}${u} 이상 · 야드 상위 ${P.top}명까지 싣습니다.`
-      +` 열 제목을 누르면 정렬합니다.`;
-  const miss=cols.filter(([k])=>dead.has(k)).map(([,cl])=>cl);
-  gap.textContent = miss.length
-    ? `이 시즌에는 ${miss.join("·")} 원본 자료가 없어 —로 두고 정렬에서도 뺍니다.` : "";
+  cnt.textContent=`${rows.length}명 · 자격 ${q.min}${u}+`;
 }
 
 tabs.addEventListener("click",e=>{
