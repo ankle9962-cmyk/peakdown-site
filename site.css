@@ -137,9 +137,6 @@ th.rn,td.rn{font-size:11.5px;color:#4a5878;font-variant-numeric:tabular-nums;
 /* 표 밑 라이선스 줄 */
 .lic{margin:10px 2px 0;font-size:11.5px;line-height:1.7;color:#4a5878}
 .lic b{color:#8fa0bd;font-weight:700}
-.credit{margin:34px 0 0;padding-top:14px;border-top:1px solid var(--line);
- font-size:11.5px;color:#4a5878;line-height:1.7}
-.credit a{color:#7ea8ff}
 td .rk.hot{color:var(--hot)}
 /* ── 유튜브 임베드 ───────────────────────────────────────────────────────
    본문의 {{youtube:...}} 토큰이 여기로 바뀝니다(리뷰·뉴스 공통). 사이트에서
@@ -399,6 +396,10 @@ td.dif{font-weight:700}
 .gthr{display:flex;gap:1.7em;align-items:flex-end;padding-left:.4em}
 .gth{display:flex;flex-direction:column;align-items:flex-start;gap:.1em}
 .gth img{width:1.75em;height:1.75em;object-fit:contain}
+/* 주차별 자료에서만 로고가 팀별 자료 링크입니다. 감싼 a 가 줄 높이를 더하지 않게 합니다. */
+.gth a.gtl{display:block;line-height:0;border-radius:4px}
+.gth a.gtl:hover img{filter:brightness(1.15)}
+.gth a.gtl:focus-visible{outline:2px solid #4a5f8f;outline-offset:2px}
 .gth b{font-size:.8em;font-weight:800;letter-spacing:.04em}
 .gth i{font-style:normal;font-size:1.2em;font-weight:800;color:var(--dim);
  font-variant-numeric:tabular-nums}
