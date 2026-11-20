@@ -3050,6 +3050,14 @@ function applyHash(){
   sel.value=(DATA()[tm]&&[...sel.options].some(o=>o.value===tm)) ? tm : HASH_DEF.team;
   viewMode=VIEWS.some(([v])=>v===tb) ? tb : HASH_DEF.tab;
   code=null; dcode=null; runSel=""; wk="";
+  // week= (주차별 자료의 로고에서 옴) — 로스터를 시즌 전이 아니라 그 주 명단으로 엽니다.
+  // 그 주가 워크북에 아직 없으면 그 앞에서 가장 가까운 주, 그것도 없으면 시즌 전.
+  const qw=parseInt(q.get("week")||"",10), W=wkSeason();
+  if(qw>0&&W&&viewMode==="roster"){
+    const has=((W.t||{})[sel.value]||{}).w||{};
+    const ok=(W.weeks||[]).map(Number).filter(n=>n<=qw&&has[n]);
+    if(ok.length) wk=String(Math.max(...ok));
+  }
 }
 if(location.hash.length>1) applyHash();
 addEventListener("hashchange",()=>{ applyHash(); render(); });

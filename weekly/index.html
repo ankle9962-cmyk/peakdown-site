@@ -863,8 +863,13 @@ function gListHTML(){
 // 시즌은 경기 자료가 담고 있는 시즌(games.js 의 season)입니다 — 보드의 기본 시즌이
 // 아닙니다. 약어는 보드가 쓰는 nflverse 쪽으로 옮깁니다(LAR→LA · WSH→WAS).
 // 왼쪽 경기 목록의 작은 로고는 링크가 아닙니다.
-const teamHref=ab=>`/teams/#team=${encodeURIComponent(ESPN2NFL[ab]||ab)}`
-  +`&season=${encodeURIComponent(String((G&&G.season)||""))}&tab=roster`;
+// 정규시즌 경기면 그 주(week)도 붙입니다 — 보드 로스터가 시즌 전이 아니라 그 주 명단으로 열립니다.
+const teamHref=ab=>{
+  const w=WEEKS[widx]||{};
+  return `/teams/#team=${encodeURIComponent(ESPN2NFL[ab]||ab)}`
+    +`&season=${encodeURIComponent(String((G&&G.season)||""))}&tab=roster`
+    +(String(w.st)==="2"&&w.wk?`&week=${encodeURIComponent(w.wk)}`:"");
+};
 
 // 리뷰는 빌드 때 박아 둔 HTML 입니다. 없으면 조용히 비웁니다 — 여기서 문장을
 // 지어내거나 어디선가 받아 오는 일은 없습니다.
