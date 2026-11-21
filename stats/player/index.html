@@ -117,14 +117,15 @@
 .bxpnl svg.pch .pcm{font-size:14px;font-weight:800;fill:rgba(255,255,255,.5)}
 .bxpnl svg.pch .pcz{font-size:13px;font-weight:700;fill:#5d6b85}
 .bxpnl svg.pch .pclos{font-size:14px;font-weight:800;letter-spacing:.06em}
-/* 칸 기록의 받은 선수 — 말풍선 · 고정 카드. */
-.bxpnl .prl{margin-top:8px;border-top:1px solid #243049;padding-top:7px;display:grid;gap:5px}
-.bxpnl .prr{display:flex;align-items:center;gap:7px;font-size:13px}
-.bxpnl .prr img,.bxpnl .prr .gh{width:22px;height:22px;border-radius:50%;object-fit:cover;object-position:50% 15%;
- flex:none;background:#1b2438;font-size:10px;display:grid;place-items:center;color:#7d8ca8}
-.bxpnl .prr em{font-style:normal;font-weight:700;color:#c3cddf;white-space:nowrap}
-.bxpnl .prr i{font-style:normal;margin-left:auto;padding-left:14px;color:#9aa6bf;font-weight:700;white-space:nowrap;
- font-variant-numeric:tabular-nums}
+/* 칸을 누르면 뜨는 받은 선수 창 — 얼굴 · 이름 · 캐치/타깃 · 야드. */
+.bxpnl .ppin.prp{min-width:250px;max-width:340px;padding:10px 12px 10px;border-color:#33415f}
+.bxpnl .ppin.prp .tt{margin-bottom:9px}
+.bxpnl .prp-l{display:grid;gap:8px;max-height:330px;overflow:auto}
+.bxpnl .prp-r{display:flex;align-items:center;gap:10px}
+.bxpnl .prp-r img,.bxpnl .prp-r .gh{width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:50% 15%;
+ flex:none;background:#1b2438;display:grid;place-items:center;font-size:12px;color:#7d8ca8;font-weight:800}
+.bxpnl .prp-r b{display:block;font-size:13.5px;font-weight:800;color:#f1f4fa;line-height:1.25}
+.bxpnl .prp-r span{display:block;font-size:12.5px;color:#9aa6bf;font-weight:700;font-variant-numeric:tabular-nums}
 .bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
 /* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
    프로필이 위로 올라가 한 줄 머리가 됩니다. */
@@ -456,6 +457,7 @@ function pnlClick(e){
   }
   const hb=t.closest(".hb");
   if(hb){
+    if(PS.kind==="qb"&&!passRows().some(r=>zoneOf(r)+"|"+r.ad===hb.dataset.h)) return;
     // 떠 있던 말풍선 자리에 그대로 고정합니다(없으면 누른 자리 옆).
     const box=PSH.el.querySelector(".pmapbox"), b=box.getBoundingClientRect(), tip=box.querySelector(".ptip");
     const on=tip&&tip.style.display==="block";
@@ -502,9 +504,9 @@ const tipT=({title,rows,more})=>tipHead(title)+`<table>${rows.map(([a,b])=>`<tr>
   +(more?`<div class="prl">${more}</div>`:"");
 function pnlPinCard(){
   if(!PS.pin) return "";
-  const p=PS.pin, info=tipInfo(p.h);
-  return `<div class="ppin" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
-    <button class="pinx" aria-label="고정 풀기">&times;</button>${tipT(info)}</div>`;
+  const p=PS.pin, qb=PS.kind==="qb";
+  return `<div class="ppin${qb?" prp":""}" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
+    <button class="pinx" aria-label="닫기">&times;</button>${qb?passRecv(p.h):tipT(tipInfo(p.h))}</div>`;
 }
 // 고정 카드가 맵 상자 밖으로 나가지 않게 — 그린 뒤 크기를 재서 안쪽으로 당깁니다.
 function pnlPinFit(){
@@ -750,21 +752,31 @@ function pnlPassMap(){
 }
 // 칸 기록 — 시도·성공·야드·TD·INT·레이팅과 받은 선수(많은 순, 작은 얼굴 · 성공/타깃 · 야드).
 function passInfo(h){
-  const [z,d]=String(h).split("|"), RV=PS.P.qb.recv||{};
-  const L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
+  const [z,d]=String(h).split("|"), L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
   const c=L.filter(r=>+r.cmp), yds=c.reduce((a,r)=>a+(+r.yds||0),0),
         td=L.filter(r=>+r.td).length, it=L.filter(r=>+r.int).length, rt=rating(c.length,L.length,yds,td,it);
-  const who={}; L.forEach(r=>{ const k=r.to||""; (who[k]=who[k]||[]).push(r); });
-  const more=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
-    const [nm,img,num]=id?(RV[id]||["?","",""]):["받는 선수 없음","",""],
-          cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0);
-    const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
-      :`<span class="gh">${esc(num||"")}</span>`;
-    return `<div class="prr">${face}<em>${esc(nm)}</em><i>${cc.length}/${rs.length} · ${yy}야드</i></div>`;
-  }).join("");
   return {title:`${PZN[z]||z} · ${PZD[d]||d}`,
     rows:[["시도",L.length],["성공",c.length],["성공률",L.length?(c.length/L.length*100).toFixed(1)+"%":"—"],
-      ["야드",yds],["TD",td],["INT",it],["패서 레이팅",rt==null?"—":rt.toFixed(1)]], more};
+      ["야드",yds],["TD",td],["INT",it],["패서 레이팅",rt==null?"—":rt.toFixed(1)]]};
+}
+// 칸을 누르면 — 그 칸에서 타깃된 선수를 얼굴과 함께(캐치/타깃 · 야드 · TD · INT), 많이 받은 순.
+// 2026-11-21 사용자 "그 구역 성적만 보이게 하고, 그 구역을 클릭하면 초상화로 그 구역에서 타겟된 선수들의
+// 성적이 작은 팝업으로".
+function passRecv(h){
+  const [z,d]=String(h).split("|"), RV=PS.P.qb.recv||{};
+  const L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
+  const who={}; L.forEach(r=>{ const k=r.to||""; (who[k]=who[k]||[]).push(r); });
+  const rows=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
+    const [nm,img,num]=id?(RV[id]||["?","",""]):["받는 선수 없음","",""];
+    const cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0),
+          td=rs.filter(r=>+r.td).length, it=rs.filter(r=>+r.int).length;
+    const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
+      :`<span class="gh">${esc(num||"")}</span>`;
+    return `<div class="prp-r">${face}<div><b>${esc(nm)}</b><span>${cc.length}/${rs.length} · ${yy}야드${
+      td?` · TD ${td}`:""}${it?` · INT ${it}`:""}</span></div></div>`;
+  }).join("");
+  return `<div class="tt">${esc(`${PZN[z]||z} · ${PZD[d]||d}`)}<i>${L.length}시도</i></div>`
+    +(rows?`<div class="prp-l">${rows}</div>`:"");
 }
 window.panelOpen=panelOpen;
 window.boxPanels=boxPanels;

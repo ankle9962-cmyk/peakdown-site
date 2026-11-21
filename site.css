@@ -673,14 +673,15 @@ td.dif{font-weight:700}
 .bxpnl svg.pch .pcm{font-size:14px;font-weight:800;fill:rgba(255,255,255,.5)}
 .bxpnl svg.pch .pcz{font-size:13px;font-weight:700;fill:#5d6b85}
 .bxpnl svg.pch .pclos{font-size:14px;font-weight:800;letter-spacing:.06em}
-/* 칸 기록의 받은 선수 — 말풍선 · 고정 카드. */
-.bxpnl .prl{margin-top:8px;border-top:1px solid #243049;padding-top:7px;display:grid;gap:5px}
-.bxpnl .prr{display:flex;align-items:center;gap:7px;font-size:13px}
-.bxpnl .prr img,.bxpnl .prr .gh{width:22px;height:22px;border-radius:50%;object-fit:cover;object-position:50% 15%;
- flex:none;background:#1b2438;font-size:10px;display:grid;place-items:center;color:#7d8ca8}
-.bxpnl .prr em{font-style:normal;font-weight:700;color:#c3cddf;white-space:nowrap}
-.bxpnl .prr i{font-style:normal;margin-left:auto;padding-left:14px;color:#9aa6bf;font-weight:700;white-space:nowrap;
- font-variant-numeric:tabular-nums}
+/* 칸을 누르면 뜨는 받은 선수 창 — 얼굴 · 이름 · 캐치/타깃 · 야드. */
+.bxpnl .ppin.prp{min-width:250px;max-width:340px;padding:10px 12px 10px;border-color:#33415f}
+.bxpnl .ppin.prp .tt{margin-bottom:9px}
+.bxpnl .prp-l{display:grid;gap:8px;max-height:330px;overflow:auto}
+.bxpnl .prp-r{display:flex;align-items:center;gap:10px}
+.bxpnl .prp-r img,.bxpnl .prp-r .gh{width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:50% 15%;
+ flex:none;background:#1b2438;display:grid;place-items:center;font-size:12px;color:#7d8ca8;font-weight:800}
+.bxpnl .prp-r b{display:block;font-size:13.5px;font-weight:800;color:#f1f4fa;line-height:1.25}
+.bxpnl .prp-r span{display:block;font-size:12.5px;color:#9aa6bf;font-weight:700;font-variant-numeric:tabular-nums}
 .bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
 /* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
    프로필이 위로 올라가 한 줄 머리가 됩니다. */

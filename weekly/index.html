@@ -640,6 +640,7 @@ function pnlClick(e){
   }
   const hb=t.closest(".hb");
   if(hb){
+    if(PS.kind==="qb"&&!passRows().some(r=>zoneOf(r)+"|"+r.ad===hb.dataset.h)) return;
     // 떠 있던 말풍선 자리에 그대로 고정합니다(없으면 누른 자리 옆).
     const box=PSH.el.querySelector(".pmapbox"), b=box.getBoundingClientRect(), tip=box.querySelector(".ptip");
     const on=tip&&tip.style.display==="block";
@@ -686,9 +687,9 @@ const tipT=({title,rows,more})=>tipHead(title)+`<table>${rows.map(([a,b])=>`<tr>
   +(more?`<div class="prl">${more}</div>`:"");
 function pnlPinCard(){
   if(!PS.pin) return "";
-  const p=PS.pin, info=tipInfo(p.h);
-  return `<div class="ppin" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
-    <button class="pinx" aria-label="고정 풀기">&times;</button>${tipT(info)}</div>`;
+  const p=PS.pin, qb=PS.kind==="qb";
+  return `<div class="ppin${qb?" prp":""}" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
+    <button class="pinx" aria-label="닫기">&times;</button>${qb?passRecv(p.h):tipT(tipInfo(p.h))}</div>`;
 }
 // 고정 카드가 맵 상자 밖으로 나가지 않게 — 그린 뒤 크기를 재서 안쪽으로 당깁니다.
 function pnlPinFit(){
@@ -934,21 +935,31 @@ function pnlPassMap(){
 }
 // 칸 기록 — 시도·성공·야드·TD·INT·레이팅과 받은 선수(많은 순, 작은 얼굴 · 성공/타깃 · 야드).
 function passInfo(h){
-  const [z,d]=String(h).split("|"), RV=PS.P.qb.recv||{};
-  const L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
+  const [z,d]=String(h).split("|"), L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
   const c=L.filter(r=>+r.cmp), yds=c.reduce((a,r)=>a+(+r.yds||0),0),
         td=L.filter(r=>+r.td).length, it=L.filter(r=>+r.int).length, rt=rating(c.length,L.length,yds,td,it);
-  const who={}; L.forEach(r=>{ const k=r.to||""; (who[k]=who[k]||[]).push(r); });
-  const more=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
-    const [nm,img,num]=id?(RV[id]||["?","",""]):["받는 선수 없음","",""],
-          cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0);
-    const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
-      :`<span class="gh">${esc(num||"")}</span>`;
-    return `<div class="prr">${face}<em>${esc(nm)}</em><i>${cc.length}/${rs.length} · ${yy}야드</i></div>`;
-  }).join("");
   return {title:`${PZN[z]||z} · ${PZD[d]||d}`,
     rows:[["시도",L.length],["성공",c.length],["성공률",L.length?(c.length/L.length*100).toFixed(1)+"%":"—"],
-      ["야드",yds],["TD",td],["INT",it],["패서 레이팅",rt==null?"—":rt.toFixed(1)]], more};
+      ["야드",yds],["TD",td],["INT",it],["패서 레이팅",rt==null?"—":rt.toFixed(1)]]};
+}
+// 칸을 누르면 — 그 칸에서 타깃된 선수를 얼굴과 함께(캐치/타깃 · 야드 · TD · INT), 많이 받은 순.
+// 2026-11-21 사용자 "그 구역 성적만 보이게 하고, 그 구역을 클릭하면 초상화로 그 구역에서 타겟된 선수들의
+// 성적이 작은 팝업으로".
+function passRecv(h){
+  const [z,d]=String(h).split("|"), RV=PS.P.qb.recv||{};
+  const L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
+  const who={}; L.forEach(r=>{ const k=r.to||""; (who[k]=who[k]||[]).push(r); });
+  const rows=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
+    const [nm,img,num]=id?(RV[id]||["?","",""]):["받는 선수 없음","",""];
+    const cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0),
+          td=rs.filter(r=>+r.td).length, it=rs.filter(r=>+r.int).length;
+    const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
+      :`<span class="gh">${esc(num||"")}</span>`;
+    return `<div class="prp-r">${face}<div><b>${esc(nm)}</b><span>${cc.length}/${rs.length} · ${yy}야드${
+      td?` · TD ${td}`:""}${it?` · INT ${it}`:""}</span></div></div>`;
+  }).join("");
+  return `<div class="tt">${esc(`${PZN[z]||z} · ${PZD[d]||d}`)}<i>${L.length}시도</i></div>`
+    +(rows?`<div class="prp-l">${rows}</div>`:"");
 }
 window.panelOpen=panelOpen;
 window.boxPanels=boxPanels;
