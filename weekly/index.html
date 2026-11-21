@@ -632,6 +632,9 @@ function pnlClick(e){
   const t=e.target;
   if(t.closest(".x")){ pnlClose(); return; }
   if(t.closest(".pinx")){ PS.pin=null; pnlDraw(); return; }
+  // 맵 안 빈 곳을 누르면 떠 있던 작은 창을 닫고 전체 그림으로(2026-11-21 사용자 "차트맵안에서 다른 공간을
+  // 누르면 자연히 팝업이 취소되고 전체로"). 창 위를 누른 것은 그대로 둡니다.
+  if(PS.pin&&t.closest(".pmapbox")&&!t.closest(".ppin")&&!t.closest(".hb")){ PS.pin=null; pnlDraw(); return; }
   const pk=t.closest(".pk");
   if(pk){
     if(pk.dataset.alt){ const a=PS.alt; pnlClose(); if(a&&a.fn) a.fn(); return; }
@@ -640,7 +643,11 @@ function pnlClick(e){
   }
   const hb=t.closest(".hb");
   if(hb){
-    if(PS.kind==="qb"&&!passRows().some(r=>zoneOf(r)+"|"+r.ad===hb.dataset.h)) return;
+    // 던진 공이 없는 칸은 창을 열지 않고, 떠 있던 창만 닫습니다(빈 곳을 누른 것과 같게).
+    if(PS.kind==="qb"&&!passRows().some(r=>zoneOf(r)+"|"+r.ad===hb.dataset.h)){
+      if(PS.pin){ PS.pin=null; pnlDraw(); }
+      return;
+    }
     // 떠 있던 말풍선 자리에 그대로 고정합니다(없으면 누른 자리 옆).
     const box=PSH.el.querySelector(".pmapbox"), b=box.getBoundingClientRect(), tip=box.querySelector(".ptip");
     const on=tip&&tip.style.display==="block";
@@ -922,11 +929,15 @@ function pnlPassMap(){
   // 칸 — 숫자만. 올리면 테두리와 기록, 누르면 고정.
   PZY.forEach(([d,y0,y1])=>PZX.forEach(([z,x0,x1])=>{
     const k=z+"|"+d, arr=cells[k]||[], [cx,cy]=cpt((x0+x1)/2,(y0+y1)/2);
-    const cm=arr.filter(r=>+r.cmp), yds=cm.reduce((a,r)=>a+(+r.yds||0),0);
+    // 성공/시도 · 그 밑에 야드 · TD·INT 가 있으면 한 줄 더(작고 옅게 — 2026-11-21 사용자 "그 밑에 TD-INT 도").
+    const cm=arr.filter(r=>+r.cmp), yds=cm.reduce((a,r)=>a+(+r.yds||0),0),
+          td=arr.filter(r=>+r.td).length, it=arr.filter(r=>+r.int).length,
+          ti=[td?`TD ${td}`:"",it?`INT ${it}`:""].filter(Boolean).join(" · "), dy=ti?-9:0;
     o+=`<g class="hb${pinH()===k?" pin":""}" data-h="${k}" tabindex="0" role="button">
       <polygon class="pzq" points="${cQuad(x0,x1,y0,y1)}"/>`
-      +(arr.length?`<text x="${f1(cx)}" y="${f1(cy+3)}" class="pn1" text-anchor="middle">${cm.length}/${arr.length}</text>
-        <text x="${f1(cx)}" y="${f1(cy+23)}" class="pn2" text-anchor="middle">${yds}야드</text>`:"")
+      +(arr.length?`<text x="${f1(cx)}" y="${f1(cy+3+dy)}" class="pn1" text-anchor="middle">${cm.length}/${arr.length}</text>
+        <text x="${f1(cx)}" y="${f1(cy+23+dy)}" class="pn2" text-anchor="middle">${yds}야드</text>${
+        ti?`<text x="${f1(cx)}" y="${f1(cy+40+dy)}" class="pn2" text-anchor="middle">${ti}</text>`:""}`:"")
       +`</g>`;
   }));
   o+=`</svg>`;
