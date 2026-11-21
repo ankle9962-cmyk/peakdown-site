@@ -227,9 +227,9 @@ td.tm .pnm:focus-visible{outline:2px solid #4a5f8f;outline-offset:2px;border-rad
 <script src="/player_season_stats.js"></script>
 <script>
 const SEASONS=[1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-const CATS={"pass": ["패스", "yds", [["att", "시도", "HIGH"], ["cmp", "성공", "HIGH"], ["pct", "성공률", "HIGH", 1], ["ypa", "시도당 야드", "HIGH", 1], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["int", "INT", "LOW"], ["rat", "레이팅", "HIGH"]]], "rush": ["러닝", "yds", [["att", "시도", "HIGH"], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["ypc", "시도당", "HIGH"]]], "rec": ["리시빙", "yds", [["tgt", "타깃", "HIGH"], ["rec", "리셉션", "HIGH"], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["ypr", "리셉션당", "HIGH"]]], "def": ["수비", "tkl", [["tkl", "솔로", "HIGH"], ["ast", "어시스트", "HIGH"], ["sck", "색", "HIGH"], ["tfl", "TFL", "HIGH"], ["qbh", "QB히트", "HIGH"], ["int", "INT", "HIGH"], ["pd", "PD", "HIGH"], ["ff", "강제펌블", "HIGH"], ["fr", "펌블회수", "HIGH"]]]};
+const CATS={"pass": ["패스", "yds", [["att", "시도", "HIGH"], ["cmp", "성공", "HIGH"], ["pct", "성공률", "HIGH", 1], ["ypa", "시도당 야드", "HIGH", 1], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["int", "INT", "LOW"], ["rat", "레이팅", "HIGH"]]], "rush": ["러닝", "yds", [["att", "시도", "HIGH"], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["ypc", "시도당", "HIGH"]]], "rec": ["리시빙", "yds", [["tgt", "타깃", "HIGH"], ["rec", "리셉션", "HIGH"], ["yds", "야드", "HIGH"], ["td", "TD", "HIGH"], ["ypr", "리셉션당", "HIGH"]]], "def": ["수비", "tkl", [["tkl", "솔로", "HIGH"], ["ast", "어시스트", "HIGH"], ["sck", "색", "HIGH"], ["tfl", "TFL", "HIGH"], ["prs", "압박", "HIGH"], ["prr", "압박률", "HIGH", 1], ["int", "INT", "HIGH"], ["pd", "PD", "HIGH"], ["ff", "강제펌블", "HIGH"], ["fr", "펌블회수", "HIGH"]]]};
 const UNIT={"pass": "시도", "rush": "시도", "rec": "리셉션", "def": "경기"};
-const QFIL=[["qa", "대형", [["", "전체"], ["SHOTGUN", "샷건"], ["UNDER_CENTER", "언더센터"], ["PISTOL", "피스톨"]]], ["pa", "플레이액션", [["", "전체"], ["1", "있음"], ["0", "없음"]]], ["pr", "압박", [["", "전체"], ["1", "받음"], ["0", "안 받음"]]], ["bl", "블리츠", [["", "전체"], ["1", "있음"], ["0", "없음"]]], ["tt", "타이밍", [["", "전체"], ["QUICK", "퀵 패스"], ["LONG", "레이트 패스"]]], ["ad", "패스 거리", [["", "전체"], ["S", "10야드 미만"], ["I", "10~19"], ["D", "20+"]]]];
+const SFIL={"pass": [["qa", "대형", [["", "전체"], ["SHOTGUN", "샷건"], ["UNDER_CENTER", "언더센터"], ["PISTOL", "피스톨"]]], ["pa", "플레이액션", [["", "전체"], ["1", "있음"], ["0", "없음"]]], ["pr", "압박", [["", "전체"], ["1", "받음"], ["0", "안 받음"]]], ["bl", "블리츠", [["", "전체"], ["1", "있음"], ["0", "없음"]]], ["tt", "타이밍", [["", "전체"], ["QUICK", "퀵 패스"], ["LONG", "레이트 패스"]]], ["ad", "패스 거리", [["", "전체"], ["S", "10야드 미만"], ["I", "10~19"], ["D", "20+"]]]], "rush": [["qa", "대형", [["", "전체"], ["UNDER_CENTER", "언더센터"], ["SHOTGUN|PISTOL", "샷건"]]], ["bx", "박스", [["", "전체"], ["LIGHT", "라이트"], ["NEUTRAL", "보통"], ["STACKED", "헤비"]]]], "rec": [["al", "정렬", [["", "전체"], ["WIDE", "와이드"], ["SLOT", "슬롯"], ["TIGHT", "타이트"], ["BACKFIELD", "백필드"]]], ["pr", "압박", [["", "전체"], ["1", "받음"], ["0", "안 받음"]]], ["cv", "커버리지", [["", "전체"], ["PRESS", "프레스"], ["OFF", "오프"]]]]};
 const P=(typeof window.PLAYER_SEASON!=="undefined")?window.PLAYER_SEASON:null;
 </script>
 <script>
@@ -856,21 +856,24 @@ sel.value=String(withData.length?withData[withData.length-1]:SEASONS[SEASONS.len
 tabs.innerHTML=KEYS.map((k,i)=>`<button role="tab" data-k="${k}"
   aria-selected="${i===0}">${esc(CATS[k][0])}</button>`).join("");
 
-// ── 선수 패널 · 패스 조건 — 선수 패널(content_render.PANEL_JS)이 굽는 자료를 씁니다. 패널 목록
+// ── 선수 패널 · 조건 — 선수 패널(content_render.PANEL_JS)이 굽는 자료를 씁니다. 패널 목록
 // (/panels/index.json 의 players)에 있는 시즌만: 이름을 누르면 보드 로스터와 같은 시즌 패널이 뜨고,
-// 패스 탭에는 QB 패널과 같은 조건(QFIL)이 붙습니다. 조건을 걸면 그 시즌 자격 선수는 그대로 두고 값만
-// 워크북(NFLMASTER) 플레이 중 조건에 맞는 것으로 다시 셉니다(qb_pass.json).
+// 패스 · 러닝 · 리시빙 탭에는 그 패널과 같은 조건(SFIL)이 붙습니다. 조건을 걸면 그 시즌 자격 선수는 그대로
+// 두고 값만 워크북(NFLMASTER) 플레이 중 조건에 맞는 것으로 다시 셉니다(SFILE — 패널과 같은 줄).
 let PIX=null;
-const QF={}, QD={};                    // 고른 조건 · 시즌별 패스 줄(받은 뒤)
+const SFILE={pass:"qb_pass.json",rush:"rush_rows.json",rec:"rec_rows.json"};
+const QF={pass:{},rush:{},rec:{}}, QD={};   // 탭마다 고른 조건 · "시즌/탭" 마다 받은 줄
 (typeof panelIndex==="function"?panelIndex():Promise.resolve(null)).then(x=>{ PIX=x; draw(); });
 const nmOK=y=>!!(PIX&&PIX.players&&PIX.players[y]);
-const qOn=()=>Object.values(QF).some(v=>v);
+const qOn=()=>!!QF[tab]&&Object.values(QF[tab]).some(v=>v);
+const qk=y=>y+"/"+tab;
 function qload(y){
-  if(!(y in QD)) QD[y]=fetch(`/panels/${encodeURIComponent(y)}/qb_pass.json`)
-    .then(r=>r.ok?r.json():null).catch(()=>null).then(d=>(QD[y]=d));
-  return Promise.resolve(QD[y]);
+  const k=qk(y);
+  if(!(k in QD)) QD[k]=fetch(`/panels/${encodeURIComponent(y)}/${SFILE[tab]}`)
+    .then(r=>r.ok?r.json():null).catch(()=>null).then(d=>(QD[k]=d));
+  return Promise.resolve(QD[k]);
 }
-const qReady=y=>QD[y]!==undefined&&!(QD[y] instanceof Promise);
+const qReady=y=>QD[qk(y)]!==undefined&&!(QD[qk(y)] instanceof Promise);
 async function ensureQ(y){ if(qOn()&&nmOK(y)&&!qReady(y)){ cnt.textContent="불러오는 중…"; await qload(y); } }
 function rating(c,a,y,t,i){
   if(!a) return null;
@@ -883,36 +886,44 @@ function r1(n,d){
   const s=(n<0)!==(d<0)?-1:1, a=Math.abs(n), b=Math.abs(d);
   return s*Math.floor((20*a+b)/(2*b))/10;
 }
-// 조건을 건 패스 줄 — 자격 선수 줄(base)마다 워크북 값으로 바꿉니다. 그 선수가 워크북에 없으면 —.
+// 부문마다 더하는 법 — 패널 표(content_render PAGG)와 같은 셈. 시도당 · 리셉션당은 서버처럼 소수 둘째 자리.
+const QAGG={
+  pass:{zero:()=>({att:0,cmp:0,yds:0,td:0,int:0}),
+    add(a,r,c){ if(r[c.k]!=="P") return; a.att++;
+      if(+r[c.cmp]){ a.cmp++; a.yds+=(+r[c.yds]||0); } a.td+=(+r[c.td]||0); a.int+=(+r[c.int]||0); },
+    out(a){ const rt=rating(a.cmp,a.att,a.yds,a.td,a.int);
+      return {att:a.att,cmp:a.cmp,yds:a.yds,td:a.td,int:a.int,pct:r1(a.cmp*100,a.att),
+        ypa:r1(a.yds,a.att),rat:rt==null?null:Math.round(rt*10)/10}; }},
+  rush:{zero:()=>({att:0,yds:0,td:0}),
+    add(a,r,c){ a.att++; a.yds+=(+r[c.yds]||0); if(+r[c.td]) a.td++; },
+    out(a){ return {att:a.att,yds:a.yds,td:a.td,ypc:a.att?Math.round(a.yds/a.att*100)/100:null}; }},
+  rec:{zero:()=>({tgt:0,rec:0,yds:0,td:0}),
+    add(a,r,c){ a.tgt++; if(+r[c.cmp]){ a.rec++; a.yds+=(+r[c.yds]||0); if(+r[c.td]) a.td++; } },
+    out(a){ return {tgt:a.tgt,rec:a.rec,yds:a.yds,td:a.td,ypr:a.rec?Math.round(a.yds/a.rec*100)/100:null}; }},
+};
+// 조건을 건 줄 — 자격 선수 줄(base)마다 워크북 값으로 바꿉니다. 그 선수가 워크북에 없으면 —.
 function qRows(base,D){
-  const ci={}; D.cols.forEach((c,i)=>ci[c]=i);
-  const act=Object.entries(QF).filter(([,v])=>v), agg=new Map(), have=new Set(D.ids);
+  const c={}; D.cols.forEach((x,i)=>c[x]=i);
+  const A=QAGG[tab], act=Object.entries(QF[tab]).filter(([,v])=>v), agg=new Map(), have=new Set(D.ids);
   for(const r of D.rows){
-    if(r[ci.k]!=="P") continue;
     let ok=true;
-    for(const [k,v] of act) if(!v.split("|").includes(String(r[ci[k]]??""))){ ok=false; break; }
+    for(const [k,v] of act) if(!v.split("|").includes(String(r[c[k]]??""))){ ok=false; break; }
     if(!ok) continue;
     const id=D.ids[r[0]];
-    let a=agg.get(id); if(!a) agg.set(id,a={att:0,cmp:0,yds:0,td:0,int:0});
-    a.att++;
-    if(+r[ci.cmp]){ a.cmp++; a.yds+=(+r[ci.yds]||0); }
-    a.td+=(+r[ci.td]||0); a.int+=(+r[ci.int]||0);
+    let a=agg.get(id); if(!a) agg.set(id,a=A.zero());
+    A.add(a,r,c);
   }
-  return base.map(r=>{
-    if(!have.has(r.id)) return {...r,att:null,cmp:null,pct:null,ypa:null,yds:null,td:null,int:null,rat:null};
-    const a=agg.get(r.id)||{att:0,cmp:0,yds:0,td:0,int:0}, rt=rating(a.cmp,a.att,a.yds,a.td,a.int);
-    return {...r,att:a.att,cmp:a.cmp,yds:a.yds,td:a.td,int:a.int,pct:r1(a.cmp*100,a.att),
-      ypa:r1(a.yds,a.att),rat:rt==null?null:Math.round(rt*10)/10};
-  });
+  const none=Object.fromEntries(CATS[tab][2].map(x=>[x[0],null]));
+  return base.map(r=>have.has(r.id)?{...r,...A.out(agg.get(r.id)||A.zero())}:{...r,...none});
 }
 function drawQ(){
-  const y=sel.value, on=tab==="pass"&&nmOK(y);
+  const y=sel.value, F=SFIL[tab], on=!!F&&nmOK(y);
   qfil.hidden=!on;
   if(!on){ qfil.innerHTML=""; return; }
-  const d=QD[y], wk=qOn()&&d&&d.wk?`<span class="snote">${d.wk[0]}–${d.wk[1]}주</span>`:"";
+  const d=QD[qk(y)], wk=qOn()&&d&&d.wk?`<span class="snote">${d.wk[0]}–${d.wk[1]}주</span>`:"";
   // 묶음 = 제목(위, 작은 머리글) + 단추 한 줄(아래) — 선수 패널 필터와 같은 모양.
-  qfil.innerHTML=QFIL.map(([k,lb,opts])=>`<div class="sgrp"><i>${esc(lb)}</i><div class="sgc">${opts.map(([v,t])=>
-    `<button data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${(QF[k]||"")===v}">${esc(t)}</button>`).join("")}</div></div>`).join("")+wk;
+  qfil.innerHTML=F.map(([k,lb,opts])=>`<div class="sgrp"><i>${esc(lb)}</i><div class="sgc">${opts.map(([v,t])=>
+    `<button data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${(QF[tab][k]||"")===v}">${esc(t)}</button>`).join("")}</div></div>`).join("")+wk;
 }
 
 // 열을 처음 누를 때의 방향. "좋은 값"이 위로 오게 합니다 — 패스의 INT 는
@@ -949,8 +960,8 @@ function draw(){
     return;
   }
   let rows=(s[tab]||[]).slice();
-  // 조건을 건 패스 표 — 자료를 못 받았으면(실패) 값은 전부 — (조건 없는 값을 조건 값처럼 보이지 않게).
-  if(tab==="pass"&&qOn()&&nmOK(y)) rows=qRows(rows,(qReady(y)&&QD[y])||{cols:[],ids:[],rows:[]});
+  // 조건을 건 표 — 자료를 못 받았으면(실패) 값은 전부 — (조건 없는 값을 조건 값처럼 보이지 않게).
+  if(SFIL[tab]&&qOn()&&nmOK(y)) rows=qRows(rows,(qReady(y)&&QD[qk(y)])||{cols:[],ids:[],rows:[]});
   const st=state();
   rows.sort((a,b)=>{
     const A=a[st.k], B=b[st.k];
@@ -990,24 +1001,25 @@ function draw(){
   cnt.textContent=`${rows.length}명 · 자격 ${q.min}${u}+`;
 }
 
-// 이름 → 시즌 패널(부문에 맞는 종류). 패스 조건을 걸어 둔 채 QB 를 열면 패널에도 같은 조건이 걸립니다.
+// 이름 → 시즌 패널(부문에 맞는 종류). 조건을 걸어 둔 채 열면 패널에도 같은 조건이 걸립니다.
 function openP(id){
   const y=sel.value, ks=String(((PIX&&PIX.players||{})[y]||{})[id]||"").split(" ").filter(Boolean);
   if(!ks.length||typeof panelOpen!=="function") return;
   const want={pass:"qb",rush:"rush",rec:"rec"}[tab], k=ks.includes(want)?want:ks[0];
-  panelOpen(id,k,"",y,{season:true,f:k==="qb"?{...QF}:null});
+  panelOpen(id,k,"",y,{season:true,f:k===want&&QF[tab]?{...QF[tab]}:null});
 }
-tabs.addEventListener("click",e=>{
+tabs.addEventListener("click",async e=>{
   const b=e.target.closest&&e.target.closest("button[data-k]");
   if(!b) return;
   tab=b.dataset.k;
   [...tabs.children].forEach(x=>x.setAttribute("aria-selected",String(x===b)));
+  await ensureQ(sel.value);
   draw();
 });
 qfil.addEventListener("click",async e=>{
   const b=e.target.closest&&e.target.closest("button[data-fk]");
   if(!b) return;
-  QF[b.dataset.fk]=b.dataset.fv;
+  QF[tab][b.dataset.fk]=b.dataset.fv;
   await ensureQ(sel.value);
   draw();
 });
