@@ -634,7 +634,12 @@ td.dif{font-weight:700}
 .bxpnl .pst tr.gh th small{font-size:12.5px;color:#7d8ca8;font-weight:600;margin-left:6px}
 .bxpnl .pst tr.gh td{border-bottom:0}
 .bxpnl .pst tbody tr.gh:first-child th{padding-top:4px}
-.bxpnl .pscope{display:flex;gap:6px;margin-bottom:8px}
+/* 주차 줄 — 맵 왼쪽 위. 제목은 필터 묶음 제목과 같은 머리글(색 막대), 칩은 조금 작게. */
+.bxpnl .pwk{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin-bottom:10px}
+.bxpnl .pwk>span{display:flex;align-items:center;gap:7px;font-size:12px;color:#8f9bb5;font-weight:800;
+ letter-spacing:.08em;line-height:1;white-space:nowrap}
+.bxpnl .pwk>span::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--tc)}
+.bxpnl .pwk .chip{font-size:12.5px;padding:4px 10px}
 .bxpnl .pmapbox{position:relative}
 .bxpnl svg.pfld{display:block;width:100%;height:auto;border-radius:10px;border:1px solid #243049;
  background:#0c1220}
@@ -718,3 +723,36 @@ td.dif{font-weight:700}
   .bxpnl svg.pch .pn2{display:none}
   .bxpnl svg.pch .pcz,.bxpnl svg.pch .pcm,.bxpnl svg.pch .pclos{font-size:24px}
 }
+
+/* 팀 육각형(HEX_JS) — 보드 기록 열 그래프 · 주차별 매치업 */
+svg.hx{display:block;width:100%;height:auto;overflow:visible}
+.hx .hxg{fill:none;stroke:rgba(255,255,255,.07)}
+.hx .hxg.hxo{stroke:rgba(255,255,255,.18)}
+.hx .hxs{stroke:rgba(255,255,255,.07)}
+.hx .hxp{stroke-width:2.5;stroke-linejoin:round}
+.hx .hxv{outline:none;cursor:default}
+.hx .hxhit{fill:transparent}
+.hx .hxl{font-size:16.5px;font-weight:800;fill:#f1f4fa}
+.hx .hxr{font-size:15px;font-weight:800;fill:#aeb9cf;font-variant-numeric:tabular-nums}
+.hx .hxr .hot{fill:#ff4d4f}
+.hx .hxr .hxsep{fill:#5d6b85}
+.hx .hxv:hover .hxl,.hx .hxv:focus .hxl{fill:#fff;text-decoration:underline}
+.hx .hxt{display:none;pointer-events:none}
+.hx[data-on="0"] .hxt[data-i="0"],.hx[data-on="1"] .hxt[data-i="1"],.hx[data-on="2"] .hxt[data-i="2"],
+.hx[data-on="3"] .hxt[data-i="3"],.hx[data-on="4"] .hxt[data-i="4"],.hx[data-on="5"] .hxt[data-i="5"]{display:inline}
+.hx .hxtb{fill:#0b111d;fill-opacity:.96;stroke:#33415f}
+.hx .hxth{font-size:14.5px;font-weight:800;fill:#f1f4fa}
+.hx .hxtl{font-size:13.5px;font-weight:600;fill:#9aa6bf}
+.hx .hxtw{font-size:11.5px;font-weight:700;fill:#5d6b85}
+.hx .hxtv{font-size:14px;font-weight:800;fill:#f1f4fa;font-variant-numeric:tabular-nums}
+
+.hxm .hxk{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:2px 0 12px}
+.hxm .hxt1{display:inline-flex;align-items:center;gap:7px}
+.hxm .hxt1 img{width:30px;height:30px;object-fit:contain}
+.hxm .hxt1 i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.hxm .hxt1 b{font-size:1.05em;font-weight:800;color:var(--ink)}
+.hxm .hxvs{color:#4a5878;font-weight:700}
+.hxm .hxk em{font-style:normal;margin-left:auto;font-size:.82em;color:#5d6b85;font-weight:700}
+.hxm .hxmg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px 18px}
+.hxm .hxm1{min-width:0;border:1px solid #1f2a40;border-radius:10px;padding:12px 10px 6px;background:#0d1322}
+.hxm .hxm1 h4{font-size:.95em;font-weight:800;color:var(--dim);letter-spacing:.12em;margin:0 0 0 6px}

@@ -22,7 +22,7 @@
     <div class="glist" id="glist"><div class="gnote">불러오는 중…</div></div></div>
   <div class="wcol"><h3>박스스코어</h3>
     <div class="gbox" id="gbox"><div class="gnote">불러오는 중…</div></div></div>
-  <div class="wcol"><h3>리뷰<em id="rvhd"></em></h3>
+  <div class="wcol"><h3><span id="rvtt">리뷰</span><em id="rvhd"></em></h3>
     <div class="rvw" id="rvw"></div></div>
 </div>
 </div>
@@ -484,7 +484,9 @@ async function panelOpen(id,kind,gid,yr,opt){
       <div class="bxin"><div class="bxload">자료 없음</div></div>`;
     return;
   }
-  PS={P,yr,gid:String(gid||""),season:!!opt.season,alt:opt.alt||null};
+  // wk = 고른 경기(아이디) — 비면 시즌 전체. 박스스코어에서 열면 그 경기 하나로 시작합니다.
+  PS={P,yr,gid:String(gid||""),season:!!opt.season,alt:opt.alt||null,
+      wk:new Set(opt.season||!gid?[]:[String(gid)])};
   pnlKind(kind);
   if(opt.f) for(const [k,,opts] of PFIL[kind]||[]){      // 처음 걸어 둘 조건(선수 스탯의 패스 조건)
     const v=opt.f[k]; if(v&&opts.some(o=>o[0]===v)) PS.f[k]=v; }
@@ -492,7 +494,7 @@ async function panelOpen(id,kind,gid,yr,opt){
   pnlDraw();
 }
 function pnlKind(kind){
-  Object.assign(PS,{kind,f:{},pin:null,scope:PS.season?"season":"game",
+  Object.assign(PS,{kind,f:{},pin:null,
     R:pnlRows(PS.P[kind]),RR:kind==="qb"?pnlRows(PS.P.qb.rush):[]});
 }
 
@@ -556,10 +558,11 @@ const PROW={
 const rkTx=([r,t])=>`(${t?"공동 ":""}${r}위)`;
 function pnlAgg(rows,rrows){ return PS.kind==="qb"?PAGG.qb(rows,rrows):PAGG[PS.kind](rows); }
 function pnlTable(){
-  const {P,kind,gid}=PS, K=P[kind], filt=pnlFilt(), one=PS.season;
+  // 첫 칸 = 고른 주(하나면 "그 경기", 여럿이면 "선택") · 둘째 칸 = 시즌. 시즌 전체를 고르면 시즌 칸만.
+  const {P,kind}=PS, K=P[kind], filt=pnlFilt(), one=!PS.wk.size;
   const all=PS.R.filter(pnlOK), rr=PS.RR.filter(pnlOK);
   const ss=pnlAgg(all,rr),
-        gm=one?null:pnlAgg(all.filter(r=>String(r.g)===gid), rr.filter(r=>String(r.g)===gid));
+        gm=one?null:pnlAgg(all.filter(pnlIn), rr.filter(pnlIn));
   const get=(a,k)=>k.startsWith("al.")?a.al[k.slice(3)]:a[k];
   const fmt=(v,d)=>v==null?null:(d?Number(v).toFixed(d):String(v));
   const cell=(v,d,u,rk,ex)=>{
@@ -567,7 +570,7 @@ function pnlTable(){
     return `<td class="${rk&&rk[0]<=5?"hot":""}">${fmt(v,d)}${u==="%"?"%":""}${ex||""}${
       rk?`<span class="rk">${rkTx(rk)}</span>`:""}</td>`;
   };
-  const g=(P.games||{})[gid]||{}, ng=Object.keys(P.games||{}).length, gap=one?"":"<td></td>";
+  const ng=Object.keys(P.games||{}).length, gap=one?"":"<td></td>";
   let body="";
   for(const r of PROW[kind]){
     if(r.length<=2&&(r.length===1||!/^[a-z]/.test(r[1]))){
@@ -576,13 +579,17 @@ function pnlTable(){
     const [lb,k,d,u]=r;
     if(u==="pfr"){            // 경기 단위 자료 — 필터를 걸면 낼 수 없습니다
       const b=K.btk||{};
-      body+=`<tr><th>${lb}</th>${one?"":cell(filt?null:b[gid],0)}${cell(filt?null:b.season,0)}</tr>`; continue;
+      const bs=[...PS.wk].reduce((a,g)=>a==null||b[g]==null?null:a+b[g],0);
+      body+=`<tr><th>${lb}</th>${one?"":cell(filt?null:bs,0)}${cell(filt?null:b.season,0)}</tr>`; continue;
     }
     const sx=u==="sep"?(a=>a.sepN?`<small>(태그 ${a.sepN})</small>`:""):null;
     body+=`<tr><th>${lb}</th>${one?"":cell(get(gm,k),d,u,null,sx&&sx(gm))}${
       cell(get(ss,k),d,u,rkOf(K,k),sx&&sx(ss))}</tr>`;
   }
-  const gh=one?"":`<th>그 경기<b>${g.home?"vs":"@"} ${esc(g.opp||"")} · ${esc(String(g.w||""))}주</b></th>`;
+  const sel=[...PS.wk].map(g=>(P.games||{})[g]||{}).sort((a,b)=>(+a.w||0)-(+b.w||0)), g1=sel[0]||{};
+  const gh=one?"":sel.length===1
+    ?`<th>그 경기<b>${g1.home?"vs":"@"} ${esc(g1.opp||"")} · ${esc(String(g1.w||""))}주</b></th>`
+    :`<th>선택<b>${sel.length>4?sel.length+"경기":sel.map(x=>esc(String(x.w||""))).join(" · ")+"주"}</b></th>`;
   return `<table class="pst"><thead><tr><th></th>${gh}
       <th>시즌<b>${esc(PS.yr)} · ${ng}경기</b></th></tr></thead><tbody>${body}</tbody></table>`;
 }
@@ -599,18 +606,21 @@ function pnlKinds(){
   const alt=PS.alt?`<button class="pk pkalt" data-alt="1">${esc(PS.alt.label||"")}</button>`:"";
   return tabs||alt?`<div class="pkb">${tabs}${alt}</div>`:"";
 }
-function pnlScope(){
-  if(PS.season) return "";
-  return `<div class="pscope">
-    <button class="chip" data-sc="game" aria-pressed="${PS.scope==="game"}">그 경기</button>
-    <button class="chip" data-sc="season" aria-pressed="${PS.scope==="season"}">시즌</button></div>`;
+// 주차 — 시즌(전체) + 그 선수가 뛴 경기마다 한 칩, 여럿 고를 수 있습니다. 맵과 표 첫 칸이 따라갑니다
+// (2026-11-21 사용자 "주차 (+전시즌)을 선택(복수선택도 가능)할 섹션"). 경기 하나뿐이면 안 냅니다.
+function pnlWeeks(){
+  const gs=Object.entries(PS.P.games||{}).sort((a,b)=>(+a[1].w||0)-(+b[1].w||0));
+  if(gs.length<2) return "";
+  return `<div class="pwk"><span>주차</span><div class="pfc"><button class="chip" data-wk="" aria-pressed="${!PS.wk.size}">시즌</button>${
+    gs.map(([g,v])=>`<button class="chip" data-wk="${esc(g)}" aria-pressed="${PS.wk.has(g)}" title="${v.home?"vs":"@"} ${
+      esc(v.opp||"")}">${esc(String(v.w||""))}주</button>`).join("")}</div></div>`;
 }
 function pnlDraw(){
   const {P,kind,gid,yr}=PS, g=(P.games||{})[gid]||{}, ng=Object.keys(P.games||{}).length;
   // 등번호 자리표시를 밑에 깔고 사진을 위에 덮습니다 — 사진이 없거나 못 받으면 번호가 보입니다.
   const shot=`<div class="gh">${esc(P.num||"?")}</div>`+(P.img?`<img src="/photos/${
     encodeURIComponent(P.img)}" alt="" onerror="this.remove()">`:"");
-  const map=kind==="rec"?pnlScope()+pnlRoute():kind==="rush"?pnlScope()+pnlGaps():pnlPassMap();
+  const map=pnlWeeks()+(kind==="rec"?pnlRoute():kind==="rush"?pnlGaps():pnlPassMap());
   const where=PS.season?`<b>${esc(P.team||"")}</b> · ${esc(yr)} 시즌 · ${ng}경기`
     :`<b>${esc(P.team||"")} ${g.home?"vs":"@"} ${esc(g.opp||"")}</b> · ${esc(yr)} ${esc(String(g.w||""))}주`;
   PSH.el.classList.toggle("k-qb",kind==="qb");
@@ -656,13 +666,14 @@ function pnlClick(e){
     return;
   }
   const c=t.closest(".chip"); if(!c) return;
-  if(c.dataset.sc) PS.scope=c.dataset.sc;
+  if(c.dataset.wk!==undefined){ const v=c.dataset.wk;
+    if(!v) PS.wk.clear(); else if(PS.wk.has(v)) PS.wk.delete(v); else PS.wk.add(v); }
   else if(c.dataset.fk) PS.f[c.dataset.fk]=c.dataset.fv;
   pnlDraw();
 }
 
 // ── 맵 공용 — 가지에 올리면 그 묶음의 기록이 뜨고, 누르면 맵 밑에 고정됩니다 ──
-const pnlIn=r=>PS.scope==="game"?String(r.g)===PS.gid:true;
+const pnlIn=r=>!PS.wk.size||PS.wk.has(String(r.g));
 const f1=n=>n.toFixed(1);
 function pnlTip(e){
   const box=PSH&&PSH.el.querySelector(".pmapbox"), tip=box&&box.querySelector(".ptip");
@@ -907,7 +918,7 @@ const cP=(x,y)=>{ const [a,b]=cpt(x,y); return `${f1(a)},${f1(b)}`; };
 const cQuad=(x0,x1,y0,y1)=>`${cP(x0,y0)} ${cP(x1,y0)} ${cP(x1,y1)} ${cP(x0,y1)}`;
 const cLine=(x0,y0,x1,y1,st)=>{ const [a,b]=cpt(x0,y0), [c,d]=cpt(x1,y1);
   return `<line x1="${f1(a)}" y1="${f1(b)}" x2="${f1(c)}" y2="${f1(d)}" ${st}/>`; };
-function passRows(){ return PS.R.filter(r=>(PS.season||String(r.g)===PS.gid)&&pnlOK(r)&&r.k==="P"); }
+function passRows(){ return PS.R.filter(r=>pnlIn(r)&&pnlOK(r)&&r.k==="P"); }
 function pnlPassMap(){
   const L=passRows(), cells={}, unk=[], c=PS.P.c1||"#2b5fd9";
   L.forEach(r=>{ const z=zoneOf(r), k=z+"|"+r.ad; if(!z||!r.ad) unk.push(r); else (cells[k]=cells[k]||[]).push(r); });
@@ -987,6 +998,78 @@ function passRecv(h){
 window.panelOpen=panelOpen;
 window.boxPanels=boxPanels;
 window.panelIndex=panelIndex;
+})();
+
+function hexSVG(labels,series,opt){
+  opt=opt||{};
+  const W=opt.w||548, H=opt.h||478, cx=W/2, cy=H/2+4, R=opt.r||168, N=opt.n||32, two=series.length>1;
+  // 글자 크기 — fl(꼭짓점 이름 px) 하나로 나머지(등수 줄 · 세부 장)가 같은 비율로 따라갑니다.
+  const fl=opt.fl||16.5, K=fl/16.5, lh=fl*1.27, fz=v=>`font-size:${(v*K).toFixed(1)}px`;
+  const n=labels.length, A=i=>-Math.PI/2+i*2*Math.PI/n;
+  const P=(i,f)=>[cx+Math.cos(A(i))*R*f, cy+Math.sin(A(i))*R*f];
+  const F=r=>r?(N+1-r)/N:0, q=v=>v.toFixed(1);
+  const poly=pts=>pts.map(([x,y])=>q(x)+","+q(y)).join(" ");
+  const rk=a=>(a[1]?"공동 ":"")+a[0]+"위";
+  let o=`<svg class="hx" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.aria||"")}">`;
+  // 고리 — 바깥부터 1위 · 9위 · 17위 · 25위 자리
+  [1,.75,.5,.25].forEach(f=>o+=`<polygon class="hxg${f===1?" hxo":""}" points="${poly(labels.map((_,i)=>P(i,f)))}"/>`);
+  labels.forEach((_,i)=>{ const [x,y]=P(i,1); o+=`<line class="hxs" x1="${cx}" y1="${cy}" x2="${q(x)}" y2="${q(y)}"/>`; });
+  series.forEach(s=>{
+    const pts=s.ax.map((a,i)=>P(i,F(a[0])));
+    o+=`<polygon class="hxp" points="${poly(pts)}" style="fill:${s.c};stroke:${s.c}" fill-opacity="${two?.2:.3}"/>`;
+    pts.forEach(([x,y])=>o+=`<circle cx="${q(x)}" cy="${q(y)}" r="4.5" style="fill:${s.c}"/>`);
+  });
+  // 꼭짓점 이름 + 등수(한 팀 = 등수 한 줄 · 두 팀 = 팀 색 등수 둘)
+  labels.forEach((lb,i)=>{
+    const [x,y]=P(i,1.13), [vx,vy]=P(i,1), c=Math.cos(A(i)), s=Math.sin(A(i));
+    const anc=Math.abs(c)<.2?"middle":c>0?"start":"end";
+    const y0=s<-.5?y-lh-3:s>.5?y+fl*.85:y-fl*.36;
+    const r2=two?series.map((ss,j)=>`${j?`<tspan class="hxsep"> · </tspan>`:""}<tspan style="fill:${ss.c}">${ss.ax[i][0]}위</tspan>`).join("")
+      :`<tspan class="${series[0].ax[i][0]<=5?"hot":""}">${rk(series[0].ax[i])}</tspan>`;
+    o+=`<g class="hxv" data-i="${i}" tabindex="0"><circle cx="${q(vx)}" cy="${q(vy)}" r="24" class="hxhit"/>
+      <text x="${q(x)}" y="${q(y0)}" text-anchor="${anc}" class="hxl" style="${fz(16.5)}">${esc(lb)}</text>
+      <text x="${q(x)}" y="${q(y0+lh)}" text-anchor="${anc}" class="hxr" style="${fz(15)}">${r2}</text></g>`;
+  });
+  // 세부 — 꼭짓점마다 한 장, 가운데에. 손을 댄 꼭짓점 것만 보입니다(아래 배선 · CSS).
+  labels.forEach((lb,i)=>{
+    const rows=series[0].ax[i][2]||[], tw=rows.reduce((a,r)=>a+r[2],0)||1;
+    const bw=(two?318:272)*K, bh=(40+rows.length*24)*K, bx=cx-bw/2, by=cy-bh/2;
+    const pd=16*K, cw=64*K, x1=bx+bw-pd;
+    let t=`<g class="hxt" data-i="${i}"><rect class="hxtb" x="${q(bx)}" y="${q(by)}" width="${q(bw)}" height="${q(bh)}" rx="10"/>`;
+    t+=`<text x="${q(bx+pd)}" y="${q(by+26*K)}" class="hxth" style="${fz(14.5)}">${esc(lb)}</text>`;
+    if(two) series.forEach((ss,j)=>t+=`<text x="${q(x1-(1-j)*cw)}" y="${q(by+26*K)}" text-anchor="end" class="hxth" style="${fz(14.5)};fill:${ss.c}">${esc(ss.ab||"")}</text>`);
+    else t+=`<text x="${q(x1)}" y="${q(by+26*K)}" text-anchor="end" class="hxth" style="${fz(14.5)}">${rk(series[0].ax[i])}</text>`;
+    rows.forEach((r,k)=>{
+      const yy=by+(52+k*24)*K;
+      t+=`<text x="${q(bx+pd)}" y="${q(yy)}" class="hxtl" style="${fz(13.5)}">${esc(r[0])}${rows.length>1?
+        `<tspan class="hxtw" style="${fz(11.5)}"> ${Math.round(r[2]/tw*100)}%</tspan>`:""}</text>`;
+      if(two) series.forEach((ss,j)=>{ const rr=(ss.ax[i][2]||[]).find(x=>x[0]===r[0]);
+        t+=`<text x="${q(x1-(1-j)*cw)}" y="${q(yy)}" text-anchor="end" class="hxtv" style="${fz(14)}">${rr?rr[1]+"위":"—"}</text>`; });
+      else t+=`<text x="${q(x1)}" y="${q(yy)}" text-anchor="end" class="hxtv" style="${fz(14)}">${r[1]}위</text>`;
+    });
+    o+=t+`</g>`;
+  });
+  return o+`</svg>`;
+}
+// 두 팀 색 — 너무 비슷하면(같은 파랑 등) 둘째 팀은 보조색, 그것도 비슷하면 옅은 회색.
+function hexPair(a,b){
+  const rgb=h=>{ const m=/^#?([0-9a-f]{6})$/i.exec(h||""); if(!m) return null;
+    const v=parseInt(m[1],16); return [v>>16&255,v>>8&255,v&255]; };
+  const d=(x,y)=>{ const p=rgb(x),r=rgb(y); return p&&r?Math.hypot(p[0]-r[0],p[1]-r[1],p[2]-r[2]):999; };
+  const A=(a||[])[0]||"#2b5fd9"; let B=(b||[])[0]||"#c60c30";
+  if(d(A,B)<110) B=d(A,(b||[])[1])>=110?b[1]:"#c7d0e0";
+  return [A,B];
+}
+// 세부 장 배선 — 문서에 한 번. 꼭짓점 이름에 마우스가 오르거나 초점이 오면 그 svg 에 data-on.
+(()=>{
+  if(window.__hexOn) return; window.__hexOn=1;
+  const svgOf=e=>e.target&&e.target.closest?e.target.closest("svg.hx"):null;
+  const on=e=>{ const s=svgOf(e); if(!s) return; const v=e.target.closest(".hxv");
+    if(v) s.setAttribute("data-on",v.dataset.i); else s.removeAttribute("data-on"); };
+  document.addEventListener("mouseover",on);
+  document.addEventListener("focusin",on);
+  document.addEventListener("mouseout",e=>{ const s=svgOf(e); if(s&&!s.contains(e.relatedTarget)) s.removeAttribute("data-on"); });
+  document.addEventListener("focusout",e=>{ const s=svgOf(e); if(s) s.removeAttribute("data-on"); });
 })();
 
 // ── 경기 결과 ─────────────────────────────────────────────────────────────
@@ -1091,8 +1174,38 @@ const teamHref=ab=>{
 // 칸을 채우는 일은 PANE_JS(content_render.py)가 맡습니다 — 보드의 주차별
 // 성적 탭도 같은 함수를 부릅니다. 여기 남은 것은 이 페이지의 요소 이름뿐입니다.
 function gReview(g){
+  // 아직 안 한 경기(리뷰도 없음) — 리뷰 칸에 두 팀 육각형 매치업(공격끼리 · 수비끼리 겹침).
+  // 2026-11-21 사용자 "미래주차 대진 … 두팀의 육각형이 … 팀 색에 따라 겹쳐서 비교".
+  const mu=!!(g&&!g.done&&!REVIEWS[g.id]);
+  const tt=document.getElementById("rvtt");
+  if(tt) tt.textContent=mu?"매치업":"리뷰";
+  if(mu){ hexMatch(document.getElementById("rvw"),document.getElementById("rvhd"),g); return; }
   paneReview(document.getElementById("rvw"),document.getElementById("rvhd"),
              g?`${g.away.ab} @ ${g.home.ab}`:"",g?REVIEWS[g.id]:null);
+}
+// 육각형 자료(/team_hex.json, build_depthcharts 가 보드 기록 열과 같은 값으로 굽습니다)는 처음
+// 쓸 때 한 번 받습니다. 그 경기 시즌의 누적 등수 — 순위를 보류한 시즌이면 자료가 없어 비웁니다.
+let HEXP=null;
+const hexData=()=>HEXP||(HEXP=fetch("/team_hex.json").then(r=>r.ok?r.json():null).catch(()=>null));
+async function hexMatch(box,hd,g){
+  if(!box) return;
+  if(hd) hd.textContent=`${g.away.ab} @ ${g.home.ab}`;
+  box.innerHTML=`<div class="rvnone">불러오는 중…</div>`;
+  const D=await hexData();
+  if(gSel!==g.id) return;                // 그 사이 다른 경기를 눌렀으면 버립니다
+  const yr=String((G&&G.season)||""), S=((D||{}).s||{})[yr]||{};
+  const a=ESPN2NFL[g.away.ab]||g.away.ab, h=ESPN2NFL[g.home.ab]||g.home.ab;
+  const A=S[a], H=S[h];
+  if(!A||!H){ box.innerHTML=`<div class="rvnone">매치업 자료 없음</div>`; return; }
+  const [ca,ch]=hexPair((D.c||{})[a],(D.c||{})[h]);
+  const key=`<div class="hxk">${[[g.away.ab,a,ca],[g.home.ab,h,ch]].map(([ab,nf,c],i)=>
+      `${i?`<span class="hxvs">@</span>`:""}<span class="hxt1"><img src="${boxLogo(ab)}" alt="" onerror="this.style.visibility='hidden'">
+       <i style="background:${c}"></i><b>${esc(ab)}</b></span>`).join("")}<em>${esc(yr)} 시즌 · 32팀 순위</em></div>`;
+  const one=(side,lb)=>(A[side]&&H[side])?`<section class="hxm1"><h4>${lb}</h4>${hexSVG(D.ax[side],
+      [{c:ca,ab:g.away.ab,ax:A[side]},{c:ch,ab:g.home.ab,ax:H[side]}],
+      // 두 장을 나란히 두므로 그림은 작게, 글자는 크게(보드 기록 열보다 좁은 칸에서도 읽히게).
+      {aria:`${g.away.ab} · ${g.home.ab} ${lb}`,w:500,h:392,r:118,fl:19.5})}</section>`:"";
+  box.innerHTML=`<div class="hxm">${key}<div class="hxmg">${one("offense","공격")}${one("defense","수비")}</div></div>`;
 }
 
 async function gShow(id){
