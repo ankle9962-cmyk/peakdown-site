@@ -470,6 +470,7 @@ function pnlRows(K){
 const KLB={qb:"패스",rush:"러싱",rec:"리시빙"};
 // gid 가 있으면 그 경기 패널(박스스코어), opt.season 이면 시즌 패널(보드 로스터 — 그 경기 없이
 // 시즌 한 열 · 맵도 시즌). opt.alt = {label, fn}: 다른 패널(보드의 시즌 비교)로 넘어가는 단추.
+// opt.f = {열: 값}: 처음부터 걸어 둘 조건.
 async function panelOpen(id,kind,gid,yr,opt){
   opt=opt||{};
   const sh=pnlShell(), tok=++PTOK;
@@ -485,6 +486,8 @@ async function panelOpen(id,kind,gid,yr,opt){
   }
   PS={P,yr,gid:String(gid||""),season:!!opt.season,alt:opt.alt||null};
   pnlKind(kind);
+  if(opt.f) for(const [k,,opts] of PFIL[kind]||[]){      // 처음 걸어 둘 조건(선수 스탯의 패스 조건)
+    const v=opt.f[k]; if(v&&opts.some(o=>o[0]===v)) PS.f[k]=v; }
   sh.el.style.setProperty("--tc",P.c1||"#2b5fd9");
   pnlDraw();
 }
