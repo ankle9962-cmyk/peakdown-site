@@ -663,7 +663,7 @@ td.dif{font-weight:700}
  font-size:22px;line-height:1;cursor:pointer;padding:2px}
 .bxpnl .pinx:hover{color:#f1f4fa}
 /* 패스맵 — 3 구역(해시 사이·심·넘버 바깥) × 3 깊이. 칸마다 합계, 그 밑에 받은 선수. */
-.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:7px}
+.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px}
 .bxpnl .pzh{font-size:14px;color:#7d8ca8;font-weight:800;text-align:center;padding:2px 0 5px}
 .bxpnl .pzd{font-size:14px;color:#7d8ca8;font-weight:800;writing-mode:vertical-rl;
  transform:rotate(180deg);text-align:center;padding:0 3px}
@@ -680,7 +680,8 @@ td.dif{font-weight:700}
 /* 받은 선수 — 칸이 넓으면 두 줄로 나란히(시즌 패스맵이 한 화면에 들어오게). */
 .bxpnl .pzrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));column-gap:16px}
 .bxpnl .pzlos{grid-column:2/-1;border-top:2px solid var(--tc);margin-top:2px;font-size:12px;
- color:var(--tc);font-weight:800;padding-top:3px}
+ color:var(--tc);font-weight:800;padding-top:3px;display:flex;justify-content:space-between}
+.bxpnl .pzlos i{font-style:normal;color:#5d6b85;font-weight:700}
 .bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
 /* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
    프로필이 위로 올라가 한 줄 머리가 됩니다. */
@@ -705,4 +706,10 @@ td.dif{font-weight:700}
   .bxpnl .pzc b{font-size:18px}
   .bxpnl .pzr{font-size:12px;gap:5px}
   .bxpnl .pzr img,.bxpnl .pzr .gh{width:20px;height:20px}
+  .bxpnl .pzm{gap:4px}
+  .bxpnl .pzrs{display:none}
+  .bxpnl .pzc{min-height:58px;padding:6px 5px}
+  .bxpnl .pzc b{font-size:15px}
+  .bxpnl .pzc s{font-size:11px}
+  .bxpnl .pzh{font-size:11px}
 }

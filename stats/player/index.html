@@ -107,7 +107,7 @@
  font-size:22px;line-height:1;cursor:pointer;padding:2px}
 .bxpnl .pinx:hover{color:#f1f4fa}
 /* 패스맵 — 3 구역(해시 사이·심·넘버 바깥) × 3 깊이. 칸마다 합계, 그 밑에 받은 선수. */
-.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:7px}
+.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px}
 .bxpnl .pzh{font-size:14px;color:#7d8ca8;font-weight:800;text-align:center;padding:2px 0 5px}
 .bxpnl .pzd{font-size:14px;color:#7d8ca8;font-weight:800;writing-mode:vertical-rl;
  transform:rotate(180deg);text-align:center;padding:0 3px}
@@ -124,7 +124,8 @@
 /* 받은 선수 — 칸이 넓으면 두 줄로 나란히(시즌 패스맵이 한 화면에 들어오게). */
 .bxpnl .pzrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));column-gap:16px}
 .bxpnl .pzlos{grid-column:2/-1;border-top:2px solid var(--tc);margin-top:2px;font-size:12px;
- color:var(--tc);font-weight:800;padding-top:3px}
+ color:var(--tc);font-weight:800;padding-top:3px;display:flex;justify-content:space-between}
+.bxpnl .pzlos i{font-style:normal;color:#5d6b85;font-weight:700}
 .bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
 /* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
    프로필이 위로 올라가 한 줄 머리가 됩니다. */
@@ -149,6 +150,12 @@
   .bxpnl .pzc b{font-size:18px}
   .bxpnl .pzr{font-size:12px;gap:5px}
   .bxpnl .pzr img,.bxpnl .pzr .gh{width:20px;height:20px}
+  .bxpnl .pzm{gap:4px}
+  .bxpnl .pzrs{display:none}
+  .bxpnl .pzc{min-height:58px;padding:6px 5px}
+  .bxpnl .pzc b{font-size:15px}
+  .bxpnl .pzc s{font-size:11px}
+  .bxpnl .pzh{font-size:11px}
 }
 
 #out th.rn,#out td.rn{width:40px;padding-right:2px;font-size:13px;color:var(--dim);font-weight:700;
@@ -673,13 +680,23 @@ function gapInfo(h){
     ["성공률",a.succ==null?"—":a.succ.toFixed(1)+"%"],["TD",a.td]]};
 }
 
-// ── 쿼터백 — 패스맵. 박스스코어는 그 경기, 시즌 패널은 시즌 전체. 3 구역 × 3 깊이, 칸마다 합계와
-// 받은 선수(많은 순 — 시즌은 다섯 명까지, 나머지는 +N).
-const BANDS=[["H","해시 사이"],["M","심"],["O","넘버 바깥"]], DEPTHS=[["D","20+"],["I","10~19"],["S","10 미만"]];
+// ── 쿼터백 — 패스맵. 박스스코어는 그 경기, 시즌 패널은 시즌 전체. 가로 다섯 칸 × 깊이 셋, 칸마다 합계와
+// 받은 선수(많은 순 — 시즌은 네 명까지, 나머지는 +N).
+// 가로 = NFL Pro 구역(해시 사이 · 심 · 넘버 바깥)에 기록지 문장의 좌우(공격 쪽에서 본 왼쪽 · 오른쪽)를
+// 붙인 것. 심인데 문장이 middle(좌우 없음)이면 해시 사이로 넣습니다 — 2026-11-21 사용자 "미들이 되어있는건
+// 그냥 비트윈더 해쉬로". 넘버 바깥인데 좌우가 없는 것(1천 개에 몇 개)과 구역·깊이 태그가 없는 것은 미분류.
+const BANDS=[["OL","넘버 바깥"],["ML","심"],["H","해시 사이"],["MR","심"],["OR","넘버 바깥"]],
+      DEPTHS=[["D","20+"],["I","10~19"],["S","10 미만"]];
+function zoneOf(r){
+  if(r.band==="H") return "H";
+  if(r.band==="M") return r.sd==="L"?"ML":r.sd==="R"?"MR":r.sd==="M"?"H":"";
+  if(r.band==="O") return r.sd==="L"?"OL":r.sd==="R"?"OR":"";
+  return "";
+}
 function pnlPassMap(){
   const L=PS.R.filter(r=>(PS.season||String(r.g)===PS.gid)&&pnlOK(r)&&r.k==="P"), RV=PS.P.qb.recv||{};
-  const cells={}, unk=[], cap=PS.season?6:99;
-  L.forEach(r=>{ if(!r.band||!r.ad) unk.push(r); else (cells[r.band+r.ad]=cells[r.band+r.ad]||[]).push(r); });
+  const cells={}, unk=[], cap=PS.season?4:99;
+  L.forEach(r=>{ const z=zoneOf(r); if(!z||!r.ad) unk.push(r); else (cells[z+r.ad]=cells[z+r.ad]||[]).push(r); });
   const mx=Math.max(1,...Object.values(cells).map(a=>a.length));
   const tc=PS.P.c1||"#2b5fd9", rgb=tc.replace("#","").match(/../g).map(h=>parseInt(h,16)).join(",");
   let o=`<div class="pzm"><span></span>${BANDS.map(([,b])=>`<div class="pzh">${b}</div>`).join("")}`;
@@ -704,7 +721,7 @@ function pnlPassMap(){
         <b>${c.length}/${arr.length}</b><s>${yds}야드${td?` · TD ${td}`:""}${it?` · INT ${it}`:""}</s>${recv}</div>`;
     });
   });
-  o+=`<span></span><div class="pzlos">LOS</div></div>`;
+  o+=`<span></span><div class="pzlos"><i>← 왼쪽</i><b>LOS</b><i>오른쪽 →</i></div></div>`;
   return o+(unk.length?`<span class="ptag">미분류 ${unk.length}</span>`:"");
 }
 window.panelOpen=panelOpen;
