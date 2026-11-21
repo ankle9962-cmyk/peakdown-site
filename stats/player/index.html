@@ -379,8 +379,11 @@ const PAGG={
   qb(L,RL){
     const pa=L.filter(p=>p.k==="P"), c=pa.filter(p=>+p.cmp);
     const yds=c.reduce((a,p)=>a+(+p.yds||0),0), td=pa.filter(p=>+p.td).length, it=pa.filter(p=>+p.int).length;
+    // 캐치 가능 % — FTN 판정이 있는 시도만(스로어웨이 · 스파이크 · 자료 없음 "" 은 분모에서 빠짐).
+    const cv=pa.filter(p=>p.ca!==""&&p.ca!=null);
     return {att:pa.length, cmp:c.length, yds, pct:pa.length?c.length/pa.length*100:null, td, int:it,
-      rat:rating(c.length,pa.length,yds,td,it), prs:L.filter(p=>+p.pr).length, sk:L.filter(p=>p.k==="S").length,
+      rat:rating(c.length,pa.length,yds,td,it), catp:cv.length?cv.filter(p=>+p.ca).length/cv.length*100:null,
+      prs:L.filter(p=>+p.pr).length, sk:L.filter(p=>p.k==="S").length,
       ratt:RL.length, ryds:RL.reduce((a,p)=>a+(+p.yds||0),0), rtd:RL.filter(p=>+p.td).length,
       fum:RL.filter(p=>+p.fum).length};
   },
@@ -393,7 +396,7 @@ const PROW={
   rush:[["러싱"],["러닝 시도","att"],["러닝 야드","yds"],["시도당 야드","ypc",1],["성공률","succ",1,"%"],
         ["브레이크 태클","btk",0,"pfr"]],
   qb:[["패스"],["패싱 시도","att"],["패싱 야드","yds"],["성공률","pct",1,"%"],["패스 TD","td"],["인터셉션","int"],
-      ["패서 레이팅","rat",1],["압박 받은 횟수","prs"],["쌕","sk"],
+      ["패서 레이팅","rat",1],["캐치 가능 %","catp",1,"%"],["압박 받은 횟수","prs"],["쌕","sk"],
       ["러싱"],["러싱 시도","ratt"],["러싱 야드","ryds"],["러싱 TD","rtd"],["펌블","fum"]],
 };
 const rkTx=([r,t])=>`(${t?"공동 ":""}${r}위)`;
