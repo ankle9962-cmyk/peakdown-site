@@ -44,15 +44,17 @@
 .bxpnl .pk.pkalt{margin-left:auto;background:none;font-size:13.5px;font-weight:700;padding:6px 14px;
  border-radius:999px}
 .bxpnl .pk.pkalt:hover{border-color:var(--tc)}
-.bxpnl .pfil{display:flex;flex-wrap:wrap;gap:8px 10px;padding:0 40px 12px 0;margin-bottom:14px;
+.bxpnl .pfil{display:flex;flex-wrap:wrap;gap:12px 26px;padding:0 40px 14px 0;margin-bottom:14px;
  border-bottom:2px solid var(--tc)}
 .bxpnl .pkb+.pfil{padding-right:0}
-/* 필터 묶음 — 옅은 상자 하나에 묶음 이름(흰 굵은 글씨 · 세로 구분선)과 칩. 이름이 칩처럼 보이지 않게
-   (2026-11-21 사용자 "구분 섹션이 … 옵션 중 하나로 보여 구분 제목을 좀 구분"). */
-.bxpnl .pfg{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:#0d1322;border:1px solid #222d45;
- border-radius:10px;padding:4px 5px 4px 11px}
-.bxpnl .pfg>span{font-size:13px;color:#f1f4fa;font-weight:800;margin-right:5px;padding-right:10px;
- border-right:1px solid #2c3858;line-height:1.3;white-space:nowrap}
+/* 필터 묶음 — 제목은 칩 위의 작은 머리글(팀 색 막대 + 옅은 굵은 글씨), 칩은 그 밑 한 줄. 제목이 칩과
+   같은 줄·같은 모양이면 옵션처럼 보입니다(2026-11-21 사용자 "구분 필터제목들이 그 세부 항목들이랑
+   구분이 잘 안돼"). */
+.bxpnl .pfg{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.bxpnl .pfg>span{display:flex;align-items:center;gap:7px;font-size:12px;color:#8f9bb5;font-weight:800;
+ letter-spacing:.08em;line-height:1;white-space:nowrap}
+.bxpnl .pfg>span::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--tc)}
+.bxpnl .pfc{display:flex;gap:4px;flex-wrap:wrap}
 .bxpnl .chip{background:#182135;border:1px solid #243049;color:#7d8ca8;font:inherit;font-size:13.5px;
  font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
 .bxpnl .chip[aria-pressed="true"]{color:#f1f4fa;border-color:var(--tc);box-shadow:inset 0 0 0 1px var(--tc)}
@@ -137,8 +139,10 @@
   .bxpnl .pbody.k-qb{grid-template-columns:minmax(0,1fr)}
 }
 @container (max-width:1040px){
-  .bxpnl .pbody{grid-template-columns:minmax(0,1fr)}
+  /* .k-rush 두 칸 규칙이 더 구체적이라 같이 적어야 한 칸이 됩니다(안 그러면 폰에서 러닝 맵 폭 0). */
+  .bxpnl .pbody,.bxpnl .pbody.k-rush{grid-template-columns:minmax(0,1fr)}
   .bxpnl .pbody:not(.k-qb) .pmap{max-width:520px}
+  .bxpnl .pbody.k-rush .pmap{max-width:760px}
   .bxpnl .pf{width:200px}
 }
 @container (max-width:700px){
@@ -150,6 +154,10 @@
   .bxpnl .pgame{margin-top:8px}
   .bxpnl .pfil,.bxpnl .pkb{padding-right:0;margin-right:0}
   .bxpnl .pst th,.bxpnl .pst td{padding:8px 6px;font-size:14.5px}
+  /* 폰 폭 — 숫자 뒤 (태그 n) · (n위) 가 한 줄에 안 들어가면 덩이째 다음 줄로. 안 그러면 표가 패널
+     밖으로 밀려 오른쪽 숫자가 잘립니다. */
+  .bxpnl .pst td,.bxpnl .pst tbody th:first-child{white-space:normal}
+  .bxpnl .pst td small,.bxpnl .pst .rk{display:inline-block;white-space:nowrap}
   .bxpnl svg.pch .pn1{font-size:46px}
   .bxpnl svg.pch .pn2{display:none}
   .bxpnl svg.pch .pcz,.bxpnl svg.pch .pcm,.bxpnl svg.pch .pclos{font-size:24px}
@@ -164,11 +172,13 @@ td.tm .pnm:focus-visible{outline:2px solid #4a5f8f;outline-offset:2px;border-rad
 #qfil{margin-top:-8px}
 #qfil[hidden]{display:none}
 #qfil .snote{align-self:center;margin-left:auto}
-/* 조건 묶음 — 선수 패널 필터와 같은 모양: 옅은 상자에 묶음 이름(굵은 글씨 · 세로 구분선)과 단추. */
-#qfil{gap:8px 10px}
-#qfil .sgrp{background:#0d1322;border:1px solid #222d45;border-radius:9px;padding:3px 4px 3px 10px;gap:3px}
-#qfil .sgrp>i{font-size:12.5px;color:var(--ink);font-weight:800;letter-spacing:0;margin-right:5px;
- padding-right:9px;border-right:1px solid #2c3858;white-space:nowrap}
+/* 조건 묶음 — 선수 패널 필터와 같은 모양: 제목은 단추 위의 작은 머리글(색 막대 + 옅은 굵은 글씨). */
+#qfil{gap:12px 24px}
+#qfil .sgrp{flex-direction:column;align-items:flex-start;gap:6px}
+#qfil .sgrp>i{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#8f9bb5;font-weight:800;
+ letter-spacing:.08em;line-height:1;white-space:nowrap;margin:0}
+#qfil .sgrp>i::before{content:"";width:3px;height:11px;border-radius:2px;background:var(--acc)}
+#qfil .sgc{display:flex;gap:3px;flex-wrap:wrap}
 </style></head>
 <body>
 <button class="navtog" id="navtog" type="button" aria-label="메뉴 열기"
@@ -228,7 +238,7 @@ function pjson(url){
   return PJC.get(url);
 }
 // 필터 칸 — content_render.PANEL_FILTERS 를 빌드가 그대로 넣습니다(순위 조합 열쇠와 한 벌).
-const PFIL={"rec":[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]]],"rush":[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],"qb":[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],["tt","타이밍",[["","전체"],["QUICK","퀵 패스"],["LONG","레이트 패스"]]],["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]]};
+const PFIL={"rec":[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["cv","커버리지",[["","전체"],["PRESS","프레스"],["OFF","오프"]]]],"rush":[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],"qb":[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],["tt","타이밍",[["","전체"],["QUICK","퀵 패스"],["LONG","레이트 패스"]]],["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]]};
 const panelIndex=()=>pjson("/panels/index.json");
 // 그 경기 박스의 선수 줄 — 패널 목록에 있는 선수(그 종류)만 누를 수 있게 하고,
 // 수비 확장 열(압박·미스드 태클)이 있으면 예전 표와 바꿔 끼웁니다.
@@ -412,9 +422,10 @@ function pnlTable(){
   return `<table class="pst"><thead><tr><th></th>${gh}
       <th>시즌<b>${esc(PS.yr)} · ${ng}경기</b></th></tr></thead><tbody>${body}</tbody></table>`;
 }
+// 묶음 = 제목(위, 작은 머리글) + 칩 한 줄(아래). 제목을 칩과 같은 줄에 두면 옵션처럼 보입니다.
 function pnlChips(){
-  return PFIL[PS.kind].map(([k,lb,opts])=>`<div class="pfg"><span>${lb}</span>${opts.map(([v,t])=>
-    `<button class="chip" data-fk="${k}" data-fv="${v}" aria-pressed="${(PS.f[k]||"")===v}">${t}</button>`).join("")}</div>`).join("");
+  return PFIL[PS.kind].map(([k,lb,opts])=>`<div class="pfg"><span>${lb}</span><div class="pfc">${opts.map(([v,t])=>
+    `<button class="chip" data-fk="${k}" data-fv="${v}" aria-pressed="${(PS.f[k]||"")===v}">${t}</button>`).join("")}</div></div>`).join("");
 }
 // 시즌 패널의 종류 단추 — 그 선수가 가진 것만. 하나뿐이면 단추 없이 예전 패널 단추만.
 function pnlKinds(){
@@ -661,21 +672,19 @@ const GAPS=[["LE","왼쪽 끝",150,66,128],["LT","왼쪽 태클",251,182,70],["L
   ["M","가운데",380,380,54],["RG","오른쪽 가드",423,468,116],["RT","오른쪽 태클",509,578,70],
   ["RE","오른쪽 끝",610,694,128]];
 const RW=760, RH=450, RLY=262, ROY=404, OLX=[208,294,380,466,552];
-// 바둑알 — 둥근 돌에 위쪽 왼편 반사광 한 점.
-// 작은 바둑알에 자리 약어(LT · LG · C · RG · RT) — 2026-11-21 사용자 "원형 말고 … 작은 바둑알에 포지션 약어".
+// 바둑알 — 반사광 · 그림자 없는 흐릿한 돌에 자리 약어(LT · LG · C · RG · RT). 오라인은 자리 표시일 뿐이고
+// 러닝 갈래가 주인공(2026-11-21 사용자 "빛샘 … 불필요 … 좀 더 흐릿하게 … 러닝 레인이 메인"). 몸은 불투명 —
+// 갈래가 돌 밑으로 지나가게.
 function stone(x,y,r,lb){
-  return `<circle cx="${x}" cy="${y+3}" r="${r}" fill="rgba(0,0,0,.45)"/>
-    <circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.82)" stroke-width="2"/>
-    <ellipse cx="${f1(x-r*.34)}" cy="${f1(y-r*.42)}" rx="${f1(r*.3)}" ry="${f1(r*.16)}" fill="rgba(255,255,255,.18)"
-      transform="rotate(-28 ${f1(x-r*.34)} ${f1(y-r*.42)})"/>
-    <text x="${x}" y="${y+4.5}" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">${lb||""}</text>`;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+    <text x="${x}" y="${y+4.5}" font-size="12" font-weight="700" fill="#7d8ca8" text-anchor="middle">${lb||""}</text>`;
 }
 function pnlGaps(){
   const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r));
   GID++;
   let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${RW} ${RH}" role="img" aria-label="러닝 방향">${fieldDefs()}
-    <defs><radialGradient id="pstn${GID}" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#55627f"/>
-      <stop offset=".55" stop-color="#2a3349"/><stop offset="1" stop-color="#151b29"/></radialGradient></defs>${
+    <defs><radialGradient id="pstn${GID}" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#232b3e"/>
+      <stop offset="1" stop-color="#151b29"/></radialGradient></defs>${
     fieldBase(RW,RH,RLY,72)}`;
   const by_={}; L.forEach(r=>{ const k=r.gap||""; (by_[k]=by_[k]||[]).push(r); });
   const mx=Math.max(1,...GAPS.map(([k])=>(by_[k]||[]).length));
@@ -885,8 +894,9 @@ function drawQ(){
   qfil.hidden=!on;
   if(!on){ qfil.innerHTML=""; return; }
   const d=QD[y], wk=qOn()&&d&&d.wk?`<span class="snote">${d.wk[0]}–${d.wk[1]}주</span>`:"";
-  qfil.innerHTML=QFIL.map(([k,lb,opts])=>`<div class="sgrp"><i>${esc(lb)}</i>${opts.map(([v,t])=>
-    `<button data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${(QF[k]||"")===v}">${esc(t)}</button>`).join("")}</div>`).join("")+wk;
+  // 묶음 = 제목(위, 작은 머리글) + 단추 한 줄(아래) — 선수 패널 필터와 같은 모양.
+  qfil.innerHTML=QFIL.map(([k,lb,opts])=>`<div class="sgrp"><i>${esc(lb)}</i><div class="sgc">${opts.map(([v,t])=>
+    `<button data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${(QF[k]||"")===v}">${esc(t)}</button>`).join("")}</div></div>`).join("")+wk;
 }
 
 // 열을 처음 누를 때의 방향. "좋은 값"이 위로 오게 합니다 — 패스의 INT 는

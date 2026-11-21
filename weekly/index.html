@@ -402,7 +402,7 @@ function pjson(url){
   return PJC.get(url);
 }
 // 필터 칸 — content_render.PANEL_FILTERS 를 빌드가 그대로 넣습니다(순위 조합 열쇠와 한 벌).
-const PFIL={"rec":[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]]],"rush":[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],"qb":[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],["tt","타이밍",[["","전체"],["QUICK","퀵 패스"],["LONG","레이트 패스"]]],["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]]};
+const PFIL={"rec":[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["cv","커버리지",[["","전체"],["PRESS","프레스"],["OFF","오프"]]]],"rush":[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],"qb":[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],["tt","타이밍",[["","전체"],["QUICK","퀵 패스"],["LONG","레이트 패스"]]],["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]]};
 const panelIndex=()=>pjson("/panels/index.json");
 // 그 경기 박스의 선수 줄 — 패널 목록에 있는 선수(그 종류)만 누를 수 있게 하고,
 // 수비 확장 열(압박·미스드 태클)이 있으면 예전 표와 바꿔 끼웁니다.
@@ -586,9 +586,10 @@ function pnlTable(){
   return `<table class="pst"><thead><tr><th></th>${gh}
       <th>시즌<b>${esc(PS.yr)} · ${ng}경기</b></th></tr></thead><tbody>${body}</tbody></table>`;
 }
+// 묶음 = 제목(위, 작은 머리글) + 칩 한 줄(아래). 제목을 칩과 같은 줄에 두면 옵션처럼 보입니다.
 function pnlChips(){
-  return PFIL[PS.kind].map(([k,lb,opts])=>`<div class="pfg"><span>${lb}</span>${opts.map(([v,t])=>
-    `<button class="chip" data-fk="${k}" data-fv="${v}" aria-pressed="${(PS.f[k]||"")===v}">${t}</button>`).join("")}</div>`).join("");
+  return PFIL[PS.kind].map(([k,lb,opts])=>`<div class="pfg"><span>${lb}</span><div class="pfc">${opts.map(([v,t])=>
+    `<button class="chip" data-fk="${k}" data-fv="${v}" aria-pressed="${(PS.f[k]||"")===v}">${t}</button>`).join("")}</div></div>`).join("");
 }
 // 시즌 패널의 종류 단추 — 그 선수가 가진 것만. 하나뿐이면 단추 없이 예전 패널 단추만.
 function pnlKinds(){
@@ -835,21 +836,19 @@ const GAPS=[["LE","왼쪽 끝",150,66,128],["LT","왼쪽 태클",251,182,70],["L
   ["M","가운데",380,380,54],["RG","오른쪽 가드",423,468,116],["RT","오른쪽 태클",509,578,70],
   ["RE","오른쪽 끝",610,694,128]];
 const RW=760, RH=450, RLY=262, ROY=404, OLX=[208,294,380,466,552];
-// 바둑알 — 둥근 돌에 위쪽 왼편 반사광 한 점.
-// 작은 바둑알에 자리 약어(LT · LG · C · RG · RT) — 2026-11-21 사용자 "원형 말고 … 작은 바둑알에 포지션 약어".
+// 바둑알 — 반사광 · 그림자 없는 흐릿한 돌에 자리 약어(LT · LG · C · RG · RT). 오라인은 자리 표시일 뿐이고
+// 러닝 갈래가 주인공(2026-11-21 사용자 "빛샘 … 불필요 … 좀 더 흐릿하게 … 러닝 레인이 메인"). 몸은 불투명 —
+// 갈래가 돌 밑으로 지나가게.
 function stone(x,y,r,lb){
-  return `<circle cx="${x}" cy="${y+3}" r="${r}" fill="rgba(0,0,0,.45)"/>
-    <circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.82)" stroke-width="2"/>
-    <ellipse cx="${f1(x-r*.34)}" cy="${f1(y-r*.42)}" rx="${f1(r*.3)}" ry="${f1(r*.16)}" fill="rgba(255,255,255,.18)"
-      transform="rotate(-28 ${f1(x-r*.34)} ${f1(y-r*.42)})"/>
-    <text x="${x}" y="${y+4.5}" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">${lb||""}</text>`;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+    <text x="${x}" y="${y+4.5}" font-size="12" font-weight="700" fill="#7d8ca8" text-anchor="middle">${lb||""}</text>`;
 }
 function pnlGaps(){
   const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r));
   GID++;
   let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${RW} ${RH}" role="img" aria-label="러닝 방향">${fieldDefs()}
-    <defs><radialGradient id="pstn${GID}" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#55627f"/>
-      <stop offset=".55" stop-color="#2a3349"/><stop offset="1" stop-color="#151b29"/></radialGradient></defs>${
+    <defs><radialGradient id="pstn${GID}" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#232b3e"/>
+      <stop offset="1" stop-color="#151b29"/></radialGradient></defs>${
     fieldBase(RW,RH,RLY,72)}`;
   const by_={}; L.forEach(r=>{ const k=r.gap||""; (by_[k]=by_[k]||[]).push(r); });
   const mx=Math.max(1,...GAPS.map(([k])=>(by_[k]||[]).length));

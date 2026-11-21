@@ -600,15 +600,17 @@ td.dif{font-weight:700}
 .bxpnl .pk.pkalt{margin-left:auto;background:none;font-size:13.5px;font-weight:700;padding:6px 14px;
  border-radius:999px}
 .bxpnl .pk.pkalt:hover{border-color:var(--tc)}
-.bxpnl .pfil{display:flex;flex-wrap:wrap;gap:8px 10px;padding:0 40px 12px 0;margin-bottom:14px;
+.bxpnl .pfil{display:flex;flex-wrap:wrap;gap:12px 26px;padding:0 40px 14px 0;margin-bottom:14px;
  border-bottom:2px solid var(--tc)}
 .bxpnl .pkb+.pfil{padding-right:0}
-/* 필터 묶음 — 옅은 상자 하나에 묶음 이름(흰 굵은 글씨 · 세로 구분선)과 칩. 이름이 칩처럼 보이지 않게
-   (2026-11-21 사용자 "구분 섹션이 … 옵션 중 하나로 보여 구분 제목을 좀 구분"). */
-.bxpnl .pfg{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:#0d1322;border:1px solid #222d45;
- border-radius:10px;padding:4px 5px 4px 11px}
-.bxpnl .pfg>span{font-size:13px;color:#f1f4fa;font-weight:800;margin-right:5px;padding-right:10px;
- border-right:1px solid #2c3858;line-height:1.3;white-space:nowrap}
+/* 필터 묶음 — 제목은 칩 위의 작은 머리글(팀 색 막대 + 옅은 굵은 글씨), 칩은 그 밑 한 줄. 제목이 칩과
+   같은 줄·같은 모양이면 옵션처럼 보입니다(2026-11-21 사용자 "구분 필터제목들이 그 세부 항목들이랑
+   구분이 잘 안돼"). */
+.bxpnl .pfg{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.bxpnl .pfg>span{display:flex;align-items:center;gap:7px;font-size:12px;color:#8f9bb5;font-weight:800;
+ letter-spacing:.08em;line-height:1;white-space:nowrap}
+.bxpnl .pfg>span::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--tc)}
+.bxpnl .pfc{display:flex;gap:4px;flex-wrap:wrap}
 .bxpnl .chip{background:#182135;border:1px solid #243049;color:#7d8ca8;font:inherit;font-size:13.5px;
  font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
 .bxpnl .chip[aria-pressed="true"]{color:#f1f4fa;border-color:var(--tc);box-shadow:inset 0 0 0 1px var(--tc)}
@@ -693,8 +695,10 @@ td.dif{font-weight:700}
   .bxpnl .pbody.k-qb{grid-template-columns:minmax(0,1fr)}
 }
 @container (max-width:1040px){
-  .bxpnl .pbody{grid-template-columns:minmax(0,1fr)}
+  /* .k-rush 두 칸 규칙이 더 구체적이라 같이 적어야 한 칸이 됩니다(안 그러면 폰에서 러닝 맵 폭 0). */
+  .bxpnl .pbody,.bxpnl .pbody.k-rush{grid-template-columns:minmax(0,1fr)}
   .bxpnl .pbody:not(.k-qb) .pmap{max-width:520px}
+  .bxpnl .pbody.k-rush .pmap{max-width:760px}
   .bxpnl .pf{width:200px}
 }
 @container (max-width:700px){
@@ -706,6 +710,10 @@ td.dif{font-weight:700}
   .bxpnl .pgame{margin-top:8px}
   .bxpnl .pfil,.bxpnl .pkb{padding-right:0;margin-right:0}
   .bxpnl .pst th,.bxpnl .pst td{padding:8px 6px;font-size:14.5px}
+  /* 폰 폭 — 숫자 뒤 (태그 n) · (n위) 가 한 줄에 안 들어가면 덩이째 다음 줄로. 안 그러면 표가 패널
+     밖으로 밀려 오른쪽 숫자가 잘립니다. */
+  .bxpnl .pst td,.bxpnl .pst tbody th:first-child{white-space:normal}
+  .bxpnl .pst td small,.bxpnl .pst .rk{display:inline-block;white-space:nowrap}
   .bxpnl svg.pch .pn1{font-size:46px}
   .bxpnl svg.pch .pn2{display:none}
   .bxpnl svg.pch .pcz,.bxpnl svg.pch .pcm,.bxpnl svg.pch .pclos{font-size:24px}
