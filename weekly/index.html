@@ -1000,56 +1000,55 @@ window.boxPanels=boxPanels;
 window.panelIndex=panelIndex;
 })();
 
+// 꼭짓점 거리 = 점수 — 1위 100점 · 32위 60점, 그 사이는 등수에 따라 고르게(2026-11-21 사용자 "32위가
+// 너무 적게 나와 … 32위가 … 60점, 1위가 100점"). 고리는 100 · 80 · 60(바닥) · 40 · 20점 자리.
 function hexSVG(labels,series,opt){
   opt=opt||{};
-  const W=opt.w||548, H=opt.h||478, cx=W/2, cy=H/2+4, R=opt.r||168, N=opt.n||32, two=series.length>1;
-  // 글자 크기 — fl(꼭짓점 이름 px) 하나로 나머지(등수 줄 · 세부 장)가 같은 비율로 따라갑니다.
+  const W=opt.w||548, H=opt.h||478, cx=W/2, cy=H/2+(opt.dy==null?4:opt.dy), R=opt.r||168, N=opt.n||32;
+  const two=series.length>1, ranks=opt.ranks!==false;
+  // 글자 크기 — fl(꼭짓점 이름 px) 하나로 등수 줄이 같은 비율로 따라갑니다.
   const fl=opt.fl||16.5, K=fl/16.5, lh=fl*1.27, fz=v=>`font-size:${(v*K).toFixed(1)}px`;
   const n=labels.length, A=i=>-Math.PI/2+i*2*Math.PI/n;
   const P=(i,f)=>[cx+Math.cos(A(i))*R*f, cy+Math.sin(A(i))*R*f];
-  const F=r=>r?(N+1-r)/N:0, q=v=>v.toFixed(1);
+  const F=r=>r?.6+.4*(N-r)/(N-1):0, q=v=>v.toFixed(1);
   const poly=pts=>pts.map(([x,y])=>q(x)+","+q(y)).join(" ");
   const rk=a=>(a[1]?"공동 ":"")+a[0]+"위";
   let o=`<svg class="hx" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.aria||"")}">`;
-  // 고리 — 바깥부터 1위 · 9위 · 17위 · 25위 자리
-  [1,.75,.5,.25].forEach(f=>o+=`<polygon class="hxg${f===1?" hxo":""}" points="${poly(labels.map((_,i)=>P(i,f)))}"/>`);
+  [1,.8,.6,.4,.2].forEach(f=>o+=`<polygon class="hxg${f===1?" hxo":f===.6?" hxf":""}" points="${poly(labels.map((_,i)=>P(i,f)))}"/>`);
   labels.forEach((_,i)=>{ const [x,y]=P(i,1); o+=`<line class="hxs" x1="${cx}" y1="${cy}" x2="${q(x)}" y2="${q(y)}"/>`; });
   series.forEach(s=>{
     const pts=s.ax.map((a,i)=>P(i,F(a[0])));
     o+=`<polygon class="hxp" points="${poly(pts)}" style="fill:${s.c};stroke:${s.c}" fill-opacity="${two?.2:.3}"/>`;
-    pts.forEach(([x,y])=>o+=`<circle cx="${q(x)}" cy="${q(y)}" r="4.5" style="fill:${s.c}"/>`);
   });
-  // 꼭짓점 이름 + 등수(한 팀 = 등수 한 줄 · 두 팀 = 팀 색 등수 둘)
+  // 점 — 누르면 그 꼭짓점의 작은 표(hexBox). 넉넉한 투명 원을 깔아 누르기 쉽게.
+  series.forEach(s=>s.ax.forEach((a,i)=>{ const [x,y]=P(i,F(a[0]));
+    o+=`<g class="hxdot" data-hi="${i}"><circle cx="${q(x)}" cy="${q(y)}" r="15" class="hxhit"/>
+      <circle cx="${q(x)}" cy="${q(y)}" r="5" class="hxpt0" style="fill:${s.c}"/></g>`; }));
+  // 꼭짓점 이름(+ 한 팀일 때만 등수 한 줄) — 이름도 누를 수 있습니다.
   labels.forEach((lb,i)=>{
-    const [x,y]=P(i,1.13), [vx,vy]=P(i,1), c=Math.cos(A(i)), s=Math.sin(A(i));
+    const [x,y]=P(i,opt.lo||1.13), c=Math.cos(A(i)), s=Math.sin(A(i));
     const anc=Math.abs(c)<.2?"middle":c>0?"start":"end";
-    const y0=s<-.5?y-lh-3:s>.5?y+fl*.85:y-fl*.36;
-    const r2=two?series.map((ss,j)=>`${j?`<tspan class="hxsep"> · </tspan>`:""}<tspan style="fill:${ss.c}">${ss.ax[i][0]}위</tspan>`).join("")
-      :`<tspan class="${series[0].ax[i][0]<=5?"hot":""}">${rk(series[0].ax[i])}</tspan>`;
-    o+=`<g class="hxv" data-i="${i}" tabindex="0"><circle cx="${q(vx)}" cy="${q(vy)}" r="24" class="hxhit"/>
-      <text x="${q(x)}" y="${q(y0)}" text-anchor="${anc}" class="hxl" style="${fz(16.5)}">${esc(lb)}</text>
-      <text x="${q(x)}" y="${q(y0+lh)}" text-anchor="${anc}" class="hxr" style="${fz(15)}">${r2}</text></g>`;
-  });
-  // 세부 — 꼭짓점마다 한 장, 가운데에. 손을 댄 꼭짓점 것만 보입니다(아래 배선 · CSS).
-  labels.forEach((lb,i)=>{
-    const rows=series[0].ax[i][2]||[], tw=rows.reduce((a,r)=>a+r[2],0)||1;
-    const bw=(two?318:272)*K, bh=(40+rows.length*24)*K, bx=cx-bw/2, by=cy-bh/2;
-    const pd=16*K, cw=64*K, x1=bx+bw-pd;
-    let t=`<g class="hxt" data-i="${i}"><rect class="hxtb" x="${q(bx)}" y="${q(by)}" width="${q(bw)}" height="${q(bh)}" rx="10"/>`;
-    t+=`<text x="${q(bx+pd)}" y="${q(by+26*K)}" class="hxth" style="${fz(14.5)}">${esc(lb)}</text>`;
-    if(two) series.forEach((ss,j)=>t+=`<text x="${q(x1-(1-j)*cw)}" y="${q(by+26*K)}" text-anchor="end" class="hxth" style="${fz(14.5)};fill:${ss.c}">${esc(ss.ab||"")}</text>`);
-    else t+=`<text x="${q(x1)}" y="${q(by+26*K)}" text-anchor="end" class="hxth" style="${fz(14.5)}">${rk(series[0].ax[i])}</text>`;
-    rows.forEach((r,k)=>{
-      const yy=by+(52+k*24)*K;
-      t+=`<text x="${q(bx+pd)}" y="${q(yy)}" class="hxtl" style="${fz(13.5)}">${esc(r[0])}${rows.length>1?
-        `<tspan class="hxtw" style="${fz(11.5)}"> ${Math.round(r[2]/tw*100)}%</tspan>`:""}</text>`;
-      if(two) series.forEach((ss,j)=>{ const rr=(ss.ax[i][2]||[]).find(x=>x[0]===r[0]);
-        t+=`<text x="${q(x1-(1-j)*cw)}" y="${q(yy)}" text-anchor="end" class="hxtv" style="${fz(14)}">${rr?rr[1]+"위":"—"}</text>`; });
-      else t+=`<text x="${q(x1)}" y="${q(yy)}" text-anchor="end" class="hxtv" style="${fz(14)}">${r[1]}위</text>`;
-    });
-    o+=t+`</g>`;
+    const y0=ranks?(s<-.5?y-lh-3:s>.5?y+fl*.85:y-fl*.36):(s<-.5?y-5:s>.5?y+fl*.85:y+fl*.36);
+    const r2=ranks?`<text x="${q(x)}" y="${q(y0+lh)}" text-anchor="${anc}" class="hxr" style="${fz(15)}"><tspan class="${
+      series[0].ax[i][0]<=5?"hot":""}">${rk(series[0].ax[i])}</tspan></text>`:"";
+    o+=`<g class="hxv" data-hi="${i}" tabindex="0" role="button" aria-label="${esc(lb)}">
+      <text x="${q(x)}" y="${q(y0)}" text-anchor="${anc}" class="hxl" style="${fz(16.5)}">${esc(lb)}</text>${r2}</g>`;
   });
   return o+`</svg>`;
+}
+// 육각형 + 꼭짓점마다 작은 표(숨김). rowsOf(i) → [[줄 라벨, [[값, 등수 글자, 5위 안]…팀마다]], …].
+// 머리 줄: 한 팀 = 꼭짓점 등수 · 두 팀 = 팀 약어(팀 색) + 그 팀 꼭짓점 등수.
+function hexBox(labels,series,opt,rowsOf){
+  const two=series.length>1, rk=a=>(a[1]?"공동 ":"")+a[0]+"위";
+  const pops=labels.map((lb,i)=>{
+    const head=two?series.map(s=>`<th style="color:${s.c}">${esc(s.ab||"")}<small>${rk(s.ax[i])}</small></th>`).join("")
+      :`<th>${rk(series[0].ax[i])}</th>`;
+    const rows=(rowsOf?rowsOf(i):[]).map(([l,cs])=>`<tr><th>${esc(l)}</th>${cs.map(([v,r,h])=>
+      `<td class="${h?"hot":""}"><b>${esc(v)}</b>${r?`<small>${esc(r)}</small>`:""}</td>`).join("")}</tr>`).join("");
+    return `<div class="hxpop${two?" hx2":""}" data-i="${i}" hidden><table class="hxpt"><thead><tr><th>${esc(lb)}</th>${head}</tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }).join("");
+  return `<div class="hxw">${hexSVG(labels,series,opt)}${pops}</div>`;
 }
 // 두 팀 색 — 너무 비슷하면(같은 파랑 등) 둘째 팀은 보조색, 그것도 비슷하면 옅은 회색.
 function hexPair(a,b){
@@ -1060,16 +1059,34 @@ function hexPair(a,b){
   if(d(A,B)<110) B=d(A,(b||[])[1])>=110?b[1]:"#c7d0e0";
   return [A,B];
 }
-// 세부 장 배선 — 문서에 한 번. 꼭짓점 이름에 마우스가 오르거나 초점이 오면 그 svg 에 data-on.
+// 작은 표 배선 — 문서에 한 번. 점 · 이름을 누르면 그 표를 점 옆에, 같은 것을 다시 누르거나 표 밖
+// 아무 데나 누르면 닫힘(맵의 작은 창과 같은 규칙). 보드는 CSS 로 줄여 그리므로 자리는 배율로 나눕니다.
 (()=>{
   if(window.__hexOn) return; window.__hexOn=1;
-  const svgOf=e=>e.target&&e.target.closest?e.target.closest("svg.hx"):null;
-  const on=e=>{ const s=svgOf(e); if(!s) return; const v=e.target.closest(".hxv");
-    if(v) s.setAttribute("data-on",v.dataset.i); else s.removeAttribute("data-on"); };
-  document.addEventListener("mouseover",on);
-  document.addEventListener("focusin",on);
-  document.addEventListener("mouseout",e=>{ const s=svgOf(e); if(s&&!s.contains(e.relatedTarget)) s.removeAttribute("data-on"); });
-  document.addEventListener("focusout",e=>{ const s=svgOf(e); if(s) s.removeAttribute("data-on"); });
+  const closeAll=()=>document.querySelectorAll(".hxw .hxpop:not([hidden])").forEach(p=>{ p.hidden=true; });
+  document.addEventListener("click",e=>{
+    const t=e.target; if(!t||!t.closest) return;
+    if(t.closest(".hxpop")) return;                     // 표 위를 누른 것은 그대로
+    const v=t.closest(".hxw [data-hi]"), w=v&&v.closest(".hxw");
+    const pop=w&&w.querySelector(`.hxpop[data-i="${v.getAttribute("data-hi")}"]`);
+    const was=!!(pop&&!pop.hidden);
+    closeAll();
+    if(!pop||was) return;                               // 빈 곳 · 같은 점 다시 → 닫기만
+    pop.hidden=false;
+    const bx=w.getBoundingClientRect(), k=(bx.width/(w.offsetWidth||bx.width))||1;
+    const a=(v.querySelector(".hxpt0")||v).getBoundingClientRect();
+    const px=(a.left+a.width/2-bx.left)/k, py=(a.top+a.height/2-bx.top)/k;
+    const pw=pop.offsetWidth, ph=pop.offsetHeight, W=w.offsetWidth, H=w.offsetHeight;
+    let x=px+18; if(x+pw>W-4) x=px-18-pw;
+    x=Math.max(4,Math.min(W-pw-4,x));
+    const y=Math.max(4,Math.min(Math.max(4,H-ph-4),py-ph/2));
+    pop.style.left=x+"px"; pop.style.top=y+"px";
+  });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){ closeAll(); return; }
+    const v=(e.key==="Enter"||e.key===" ")&&e.target&&e.target.closest&&e.target.closest(".hxw .hxv");
+    if(v){ e.preventDefault(); v.dispatchEvent(new MouseEvent("click",{bubbles:true})); }
+  });
 })();
 
 // ── 경기 결과 ─────────────────────────────────────────────────────────────
@@ -1201,10 +1218,17 @@ async function hexMatch(box,hd,g){
   const key=`<div class="hxk">${[[g.away.ab,a,ca],[g.home.ab,h,ch]].map(([ab,nf,c],i)=>
       `${i?`<span class="hxvs">@</span>`:""}<span class="hxt1"><img src="${boxLogo(ab)}" alt="" onerror="this.style.visibility='hidden'">
        <i style="background:${c}"></i><b>${esc(ab)}</b></span>`).join("")}<em>${esc(yr)} 시즌 · 32팀 순위</em></div>`;
-  const one=(side,lb)=>(A[side]&&H[side])?`<section class="hxm1"><h4>${lb}</h4>${hexSVG(D.ax[side],
+  // 꼭짓점을 누르면 두 팀의 그 블록 줄(값 · 등수)을 한 표로 — D.b 는 기록 열과 같은 글자(team_blocks).
+  const B=((D||{}).b||{})[yr]||{};
+  const rowsOf=(side,i)=>{ const ra=((B[a]||{})[side]||[])[i]||[], rh=((B[h]||{})[side]||[])[i]||[];
+    return ra.map((r,k)=>{ const x=rh[k]||[r[0],"—","",0];
+      return [r[0],[[r[1],r[2],!!r[3]],[x[1],x[2],!!x[3]]]]; }); };
+  // 이름만(등수 줄 없음) · 그림은 크게 · 글자는 작게 — 2026-11-21 사용자 "글씨들이 너무 크다 순위는 그냥
+  // 빼고 그래프를 더 크게". 그림 폭은 640px 까지만 커져서(HEXM_CSS) 글자가 15px 를 넘지 않습니다.
+  const one=(side,lb)=>(A[side]&&H[side])?`<section class="hxm1"><h4>${lb}</h4>${hexBox(D.ax[side],
       [{c:ca,ab:g.away.ab,ax:A[side]},{c:ch,ab:g.home.ab,ax:H[side]}],
-      // 두 장을 나란히 두므로 그림은 작게, 글자는 크게(보드 기록 열보다 좁은 칸에서도 읽히게).
-      {aria:`${g.away.ab} · ${g.home.ab} ${lb}`,w:500,h:392,r:118,fl:19.5})}</section>`:"";
+      {aria:`${g.away.ab} · ${g.home.ab} ${lb}`,w:640,h:500,r:196,fl:15,ranks:false,lo:1.1,dy:2},
+      i=>rowsOf(side,i))}</section>`:"";
   box.innerHTML=`<div class="hxm">${key}<div class="hxmg">${one("offense","공격")}${one("defense","수비")}</div></div>`;
 }
 
