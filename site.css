@@ -662,26 +662,25 @@ td.dif{font-weight:700}
 .bxpnl .pinx{position:absolute;top:6px;right:9px;background:none;border:0;color:#7d8ca8;font:inherit;
  font-size:22px;line-height:1;cursor:pointer;padding:2px}
 .bxpnl .pinx:hover{color:#f1f4fa}
-/* 패스맵 — 3 구역(해시 사이·심·넘버 바깥) × 3 깊이. 칸마다 합계, 그 밑에 받은 선수. */
-.bxpnl .pzm{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px}
-.bxpnl .pzh{font-size:14px;color:#7d8ca8;font-weight:800;text-align:center;padding:2px 0 5px}
-.bxpnl .pzd{font-size:14px;color:#7d8ca8;font-weight:800;writing-mode:vertical-rl;
- transform:rotate(180deg);text-align:center;padding:0 3px}
-.bxpnl .pzc{border:1px solid #243049;border-radius:10px;padding:11px 12px 12px;min-height:128px;min-width:0}
-.bxpnl .pzc b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
-.bxpnl .pzc s{display:block;text-decoration:none;font-size:13.5px;color:#aab5cc;font-weight:700;margin-top:3px}
-.bxpnl .pzr{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:13.5px;min-width:0}
-.bxpnl .pzr img,.bxpnl .pzr .gh{width:26px;height:26px;border-radius:50%;object-fit:cover;
- object-position:50% 15%;flex:none;background:#1b2438;font-size:11px;display:grid;place-items:center;color:#7d8ca8}
-.bxpnl .pzr em{font-style:normal;color:#c3cddf;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.bxpnl .pzr i{font-style:normal;color:#7d8ca8;font-weight:700;margin-left:auto;white-space:nowrap;
+/* 패스 차트 — 비스듬히 내려다본 필드, 다섯 칸 × 깊이 셋, 칸 위에 숫자만(음영 없음). 올리면 테두리. */
+.bxpnl svg.pch{background:#0b1019}
+.bxpnl svg.pch .pzq{fill:rgba(0,0,0,0);stroke:transparent;stroke-width:2.5;transition:stroke .12s,fill .12s}
+.bxpnl svg.pch .hb.on .pzq,.bxpnl svg.pch .hb.pin .pzq,.bxpnl svg.pch .hb:focus-visible .pzq{
+ stroke:var(--tc);fill:rgba(255,255,255,.045)}
+.bxpnl svg.pch.hov .hb:not(.on):not(.pin),.bxpnl svg.pch.pinned .hb:not(.pin){opacity:1}
+.bxpnl svg.pch .pn1{font-size:28px;font-weight:800;fill:#f1f4fa;font-variant-numeric:tabular-nums}
+.bxpnl svg.pch .pn2{font-size:13px;font-weight:700;fill:#9aa6bf}
+.bxpnl svg.pch .pcm{font-size:14px;font-weight:800;fill:rgba(255,255,255,.5)}
+.bxpnl svg.pch .pcz{font-size:13px;font-weight:700;fill:#5d6b85}
+.bxpnl svg.pch .pclos{font-size:14px;font-weight:800;letter-spacing:.06em}
+/* 칸 기록의 받은 선수 — 말풍선 · 고정 카드. */
+.bxpnl .prl{margin-top:8px;border-top:1px solid #243049;padding-top:7px;display:grid;gap:5px}
+.bxpnl .prr{display:flex;align-items:center;gap:7px;font-size:13px}
+.bxpnl .prr img,.bxpnl .prr .gh{width:22px;height:22px;border-radius:50%;object-fit:cover;object-position:50% 15%;
+ flex:none;background:#1b2438;font-size:10px;display:grid;place-items:center;color:#7d8ca8}
+.bxpnl .prr em{font-style:normal;font-weight:700;color:#c3cddf;white-space:nowrap}
+.bxpnl .prr i{font-style:normal;margin-left:auto;padding-left:14px;color:#9aa6bf;font-weight:700;white-space:nowrap;
  font-variant-numeric:tabular-nums}
-.bxpnl .pzr.more{color:#5d6b85;font-weight:800;padding-left:33px}
-/* 받은 선수 — 칸이 넓으면 두 줄로 나란히(시즌 패스맵이 한 화면에 들어오게). */
-.bxpnl .pzrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));column-gap:16px}
-.bxpnl .pzlos{grid-column:2/-1;border-top:2px solid var(--tc);margin-top:2px;font-size:12px;
- color:var(--tc);font-weight:800;padding-top:3px;display:flex;justify-content:space-between}
-.bxpnl .pzlos i{font-style:normal;color:#5d6b85;font-weight:700}
 .bxpnl .ptag{display:inline-block;margin-top:8px;font-size:12px;color:#5d6b85;font-weight:700}
 /* 창 폭에 따라 — 패널 자신의 폭(container)을 봅니다. 좁아지면 맵이 표 밑으로, 더 좁으면
    프로필이 위로 올라가 한 줄 머리가 됩니다. */
@@ -702,14 +701,7 @@ td.dif{font-weight:700}
   .bxpnl .pgame{margin-top:8px}
   .bxpnl .pfil,.bxpnl .pkb{padding-right:0;margin-right:0}
   .bxpnl .pst th,.bxpnl .pst td{padding:8px 6px;font-size:14.5px}
-  .bxpnl .pzc{min-height:96px;padding:8px}
-  .bxpnl .pzc b{font-size:18px}
-  .bxpnl .pzr{font-size:12px;gap:5px}
-  .bxpnl .pzr img,.bxpnl .pzr .gh{width:20px;height:20px}
-  .bxpnl .pzm{gap:4px}
-  .bxpnl .pzrs{display:none}
-  .bxpnl .pzc{min-height:58px;padding:6px 5px}
-  .bxpnl .pzc b{font-size:15px}
-  .bxpnl .pzc s{font-size:11px}
-  .bxpnl .pzh{font-size:11px}
+  .bxpnl svg.pch .pn1{font-size:46px}
+  .bxpnl svg.pch .pn2{display:none}
+  .bxpnl svg.pch .pcz,.bxpnl svg.pch .pcm,.bxpnl svg.pch .pclos{font-size:24px}
 }

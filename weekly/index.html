@@ -639,7 +639,7 @@ function pnlClick(e){
     return;
   }
   const hb=t.closest(".hb");
-  if(hb&&PS.kind!=="qb"){
+  if(hb){
     // 떠 있던 말풍선 자리에 그대로 고정합니다(없으면 누른 자리 옆).
     const box=PSH.el.querySelector(".pmapbox"), b=box.getBoundingClientRect(), tip=box.querySelector(".ptip");
     const on=tip&&tip.style.display==="block";
@@ -665,7 +665,7 @@ function pnlTip(e){
   g.classList.add("on"); if(svg) svg.classList.add("hov");
   // 고정한 가지 위에서는 띄우지 않습니다 — 같은 기록이 고정 카드에 있습니다.
   if(g.dataset.h===pinH()){ tip.style.display="none"; return; }
-  tip.innerHTML=tipT(PS.kind==="rec"?routeInfo(g.dataset.h):gapInfo(g.dataset.h));
+  tip.innerHTML=tipT(tipInfo(g.dataset.h));
   tip.style.display="block";
   const b=box.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
   let x=e.clientX-b.left+14, y=e.clientY-b.top+12;
@@ -673,7 +673,8 @@ function pnlTip(e){
   if(y+th>b.height) y=b.height-th-4;
   tip.style.left=Math.max(4,x)+"px"; tip.style.top=Math.max(4,y)+"px";
 }
-function pnlHover(e){ if(PS&&PS.kind!=="qb") pnlTip(e); }
+function pnlHover(e){ if(PS) pnlTip(e); }
+const tipInfo=h=>PS.kind==="rec"?routeInfo(h):PS.kind==="rush"?gapInfo(h):passInfo(h);
 const tipCtx=()=>{
   const out=[];
   for(const [k,lb,opts] of PFIL[PS.kind]){ const v=PS.f[k]; if(!v) continue;
@@ -681,10 +682,11 @@ const tipCtx=()=>{
   return out.join(" · ");
 };
 const tipHead=title=>`<div class="tt">${esc(title)}${tipCtx()?`<i>${esc(tipCtx())}</i>`:""}</div>`;
-const tipT=({title,rows})=>tipHead(title)+`<table>${rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</table>`;
+const tipT=({title,rows,more})=>tipHead(title)+`<table>${rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</table>`
+  +(more?`<div class="prl">${more}</div>`:"");
 function pnlPinCard(){
   if(!PS.pin) return "";
-  const p=PS.pin, info=PS.kind==="rec"?routeInfo(p.h):gapInfo(p.h);
+  const p=PS.pin, info=tipInfo(p.h);
   return `<div class="ppin" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
     <button class="pinx" aria-label="고정 풀기">&times;</button>${tipT(info)}</div>`;
 }
@@ -856,49 +858,97 @@ function gapInfo(h){
     ["성공률",a.succ==null?"—":a.succ.toFixed(1)+"%"],["TD",a.td]]};
 }
 
-// ── 쿼터백 — 패스맵. 박스스코어는 그 경기, 시즌 패널은 시즌 전체. 가로 다섯 칸 × 깊이 셋, 칸마다 합계와
-// 받은 선수(많은 순 — 시즌은 네 명까지, 나머지는 +N).
+// ── 쿼터백 — 패스 차트. 박스스코어는 그 경기, 시즌 패널은 시즌 전체. 비스듬히 내려다본 필드를 가로 다섯 칸 ×
+// 깊이 셋으로 나누고 칸 위에 숫자만(성공/시도 · 야드) 올립니다 — 음영 없이(2026-11-21 사용자 "점들을 제외한
+// 필드를 구성하고 … 각 구역 위에 숫자만 뜨게 · 음영 말고"). 칸에 올리면 그 칸 기록과 받은 선수, 누르면 고정.
 // 가로 = NFL Pro 구역(해시 사이 · 심 · 넘버 바깥)에 기록지 문장의 좌우(공격 쪽에서 본 왼쪽 · 오른쪽)를
-// 붙인 것. 심인데 문장이 middle(좌우 없음)이면 해시 사이로 넣습니다 — 2026-11-21 사용자 "미들이 되어있는건
-// 그냥 비트윈더 해쉬로". 넘버 바깥인데 좌우가 없는 것(1천 개에 몇 개)과 구역·깊이 태그가 없는 것은 미분류.
-const BANDS=[["OL","넘버 바깥"],["ML","심"],["H","해시 사이"],["MR","심"],["OR","넘버 바깥"]],
-      DEPTHS=[["D","20+"],["I","10~19"],["S","10 미만"]];
+// 붙인 것. 심인데 문장이 middle(좌우 없음)이면 해시 사이로 넣습니다 — 사용자 "미들이 되어있는건 그냥 비트윈더
+// 해쉬로". 넘버 바깥인데 좌우가 없는 것과 구역·깊이 태그가 없는 것은 미분류.
 function zoneOf(r){
   if(r.band==="H") return "H";
   if(r.band==="M") return r.sd==="L"?"ML":r.sd==="R"?"MR":r.sd==="M"?"H":"";
   if(r.band==="O") return r.sd==="L"?"OL":r.sd==="R"?"OR":"";
   return "";
 }
+// 필드 — 야드 좌표(가운데 0 · 사이드라인 ±26.65 · LOS 0, 위가 +). 해시 칸은 글자가 들어가게 실제(±3.08)보다
+// 조금 넓은 ±4.6, 넘버 안쪽 끝 ±13.5.
+const PZX=[["OL",-26.65,-13.5],["ML",-13.5,-4.6],["H",-4.6,4.6],["MR",4.6,13.5],["OR",13.5,26.65]];
+const PZY=[["S",0,10],["I",10,20],["D",20,35]];
+const PZS={OL:"넘버 바깥",ML:"심",H:"해시 사이",MR:"심",OR:"넘버 바깥"};
+const PZN={OL:"넘버 바깥 (왼쪽)",ML:"심 (왼쪽)",H:"해시 사이",MR:"심 (오른쪽)",OR:"넘버 바깥 (오른쪽)"};
+const PZD={S:"10야드 미만",I:"10~19야드",D:"20야드 이상"};
+const CW=900, CH=480, CY0=-5, CY1=35;
+// 투영 — 아래(LOS 뒤)는 넓고 위(+35)는 좁게, 비스듬히 내려다본 필드.
+function cpt(x,y){
+  const t=(y-CY0)/(CY1-CY0), half=CW*0.43*(1-0.34*t);
+  return [CW/2+x/26.65*half, CH-34-t*(CH-74)];
+}
+const cP=(x,y)=>{ const [a,b]=cpt(x,y); return `${f1(a)},${f1(b)}`; };
+const cQuad=(x0,x1,y0,y1)=>`${cP(x0,y0)} ${cP(x1,y0)} ${cP(x1,y1)} ${cP(x0,y1)}`;
+const cLine=(x0,y0,x1,y1,st)=>{ const [a,b]=cpt(x0,y0), [c,d]=cpt(x1,y1);
+  return `<line x1="${f1(a)}" y1="${f1(b)}" x2="${f1(c)}" y2="${f1(d)}" ${st}/>`; };
+function passRows(){ return PS.R.filter(r=>(PS.season||String(r.g)===PS.gid)&&pnlOK(r)&&r.k==="P"); }
 function pnlPassMap(){
-  const L=PS.R.filter(r=>(PS.season||String(r.g)===PS.gid)&&pnlOK(r)&&r.k==="P"), RV=PS.P.qb.recv||{};
-  const cells={}, unk=[], cap=PS.season?4:99;
-  L.forEach(r=>{ const z=zoneOf(r); if(!z||!r.ad) unk.push(r); else (cells[z+r.ad]=cells[z+r.ad]||[]).push(r); });
-  const mx=Math.max(1,...Object.values(cells).map(a=>a.length));
-  const tc=PS.P.c1||"#2b5fd9", rgb=tc.replace("#","").match(/../g).map(h=>parseInt(h,16)).join(",");
-  let o=`<div class="pzm"><span></span>${BANDS.map(([,b])=>`<div class="pzh">${b}</div>`).join("")}`;
-  DEPTHS.forEach(([d,dl])=>{
-    o+=`<div class="pzd">${dl}</div>`;
-    BANDS.forEach(([b])=>{
-      const arr=cells[b+d]||[];
-      if(!arr.length){ o+=`<div class="pzc"></div>`; return; }
-      const c=arr.filter(r=>+r.cmp), yds=c.reduce((a,r)=>a+(+r.yds||0),0),
-            td=arr.filter(r=>+r.td).length, it=arr.filter(r=>+r.int).length;
-      const who={}; arr.forEach(r=>{ const k=r.to||"?"; (who[k]=who[k]||[]).push(r); });
-      const ws=Object.entries(who).sort((a,b)=>b[1].length-a[1].length);
-      const recv='<div class="pzrs">'+ws.slice(0,cap).map(([id,rs])=>{
-        const [nm,img,num]=RV[id]||["?","",""], cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0);
-        const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
-          :`<span class="gh">${esc(num||"?")}</span>`;
-        // 칸이 좁아 성만 씁니다(접미사 Jr.·III 는 뺍니다). 전체 이름은 title 로.
-        const last=String(nm).split(" ").filter(w=>!/^(Jr\.?|Sr\.?|II|III|IV|V)$/.test(w)).slice(-1)[0]||nm;
-        return `<div class="pzr" title="${esc(nm)}">${face}<em>${esc(last)}</em><i>${cc.length}/${rs.length} · ${yy}</i></div>`;
-      }).join("")+(ws.length>cap?`<div class="pzr more">+${ws.length-cap}</div>`:"")+'</div>';
-      o+=`<div class="pzc" style="background:rgba(${rgb},${(0.06+0.3*arr.length/mx).toFixed(2)})">
-        <b>${c.length}/${arr.length}</b><s>${yds}야드${td?` · TD ${td}`:""}${it?` · INT ${it}`:""}</s>${recv}</div>`;
-    });
-  });
-  o+=`<span></span><div class="pzlos"><i>← 왼쪽</i><b>LOS</b><i>오른쪽 →</i></div></div>`;
-  return o+(unk.length?`<span class="ptag">미분류 ${unk.length}</span>`:"");
+  const L=passRows(), cells={}, unk=[], c=PS.P.c1||"#2b5fd9";
+  L.forEach(r=>{ const z=zoneOf(r), k=z+"|"+r.ad; if(!z||!r.ad) unk.push(r); else (cells[k]=cells[k]||[]).push(r); });
+  let o=`<svg class="pfld pch${PS.pin?" pinned":""}" viewBox="0 0 ${CW} ${CH}" role="img" aria-label="패스 차트">
+    <defs><linearGradient id="pchg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1c2333"/>
+      <stop offset="1" stop-color="#121826"/></linearGradient></defs>`;
+  // 바탕 — 사이드라인 밖, 필드, 5야드 줄(10야드마다 조금 밝게), 1야드 눈금(사이드라인 안쪽 · 해시).
+  o+=`<polygon points="${cQuad(-29.6,29.6,CY0,CY1)}" fill="#0e131e"/>`;
+  o+=`<polygon points="${cQuad(-26.65,26.65,CY0,CY1)}" fill="url(#pchg)" stroke="rgba(255,255,255,.32)" stroke-width="1.5"/>`;
+  for(let y=CY0;y<=CY1;y+=5) if(y) o+=cLine(-26.65,y,26.65,y,`stroke="rgba(255,255,255,${y%10?.07:.15})" stroke-width="1.2"`);
+  for(let y=CY0+1;y<CY1;y++){
+    if(y%5===0) continue;
+    for(const x of [-25.9,-4.6,4.6,25.9]) o+=cLine(x-.45,y,x+.45,y,`stroke="rgba(255,255,255,.16)" stroke-width="1"`);
+  }
+  // 칸 경계 — LOS 위로만, 점선(해시 · 넘버 줄).
+  for(const x of [-13.5,-4.6,4.6,13.5]) o+=cLine(x,0,x,CY1,`stroke="rgba(255,255,255,.2)" stroke-width="1.2" stroke-dasharray="5 7"`);
+  // 깊이 +10 · +20 · +30 — 양쪽 사이드라인 바깥(칸 숫자와 겹치지 않게).
+  for(const y of [10,20,30]){
+    const [xl,yl]=cpt(-27.4,y), [xr,yr]=cpt(27.4,y);
+    o+=`<text x="${f1(xl)}" y="${f1(yl+5)}" class="pcm" text-anchor="end">+${y}</text>
+      <text x="${f1(xr)}" y="${f1(yr+5)}" class="pcm">+${y}</text>`;
+  }
+  // LOS — 팀 색 굵은 선, 양 끝에 글자.
+  o+=cLine(-29.6,0,29.6,0,`stroke="${c}" stroke-width="3.5"`);
+  { const [xl,yl]=cpt(-27,0), [xr,yr]=cpt(27,0);
+    o+=`<text x="${f1(xl)}" y="${f1(yl-8)}" class="pclos" fill="${c}" text-anchor="end">LOS</text>
+      <text x="${f1(xr)}" y="${f1(yr-8)}" class="pclos" fill="${c}">LOS</text>`; }
+  // 열 이름 — LOS 뒤에 옅게.
+  PZX.forEach(([k,x0,x1])=>{ const [tx,ty]=cpt((x0+x1)/2,-2.7);
+    o+=`<text x="${f1(tx)}" y="${f1(ty)}" class="pcz" text-anchor="middle">${PZS[k]}</text>`; });
+  // 칸 — 숫자만. 올리면 테두리와 기록, 누르면 고정.
+  PZY.forEach(([d,y0,y1])=>PZX.forEach(([z,x0,x1])=>{
+    const k=z+"|"+d, arr=cells[k]||[], [cx,cy]=cpt((x0+x1)/2,(y0+y1)/2);
+    const cm=arr.filter(r=>+r.cmp), yds=cm.reduce((a,r)=>a+(+r.yds||0),0);
+    o+=`<g class="hb${pinH()===k?" pin":""}" data-h="${k}" tabindex="0" role="button">
+      <polygon class="pzq" points="${cQuad(x0,x1,y0,y1)}"/>`
+      +(arr.length?`<text x="${f1(cx)}" y="${f1(cy+3)}" class="pn1" text-anchor="middle">${cm.length}/${arr.length}</text>
+        <text x="${f1(cx)}" y="${f1(cy+23)}" class="pn2" text-anchor="middle">${yds}야드</text>`:"")
+      +`</g>`;
+  }));
+  o+=`</svg>`;
+  return `<div class="pmapbox">${o}<div class="ptip"></div>${pnlPinCard()}</div>`
+    +(unk.length?`<span class="ptag">미분류 ${unk.length}</span>`:"");
+}
+// 칸 기록 — 시도·성공·야드·TD·INT·레이팅과 받은 선수(많은 순, 작은 얼굴 · 성공/타깃 · 야드).
+function passInfo(h){
+  const [z,d]=String(h).split("|"), RV=PS.P.qb.recv||{};
+  const L=passRows().filter(r=>zoneOf(r)===z&&r.ad===d);
+  const c=L.filter(r=>+r.cmp), yds=c.reduce((a,r)=>a+(+r.yds||0),0),
+        td=L.filter(r=>+r.td).length, it=L.filter(r=>+r.int).length, rt=rating(c.length,L.length,yds,td,it);
+  const who={}; L.forEach(r=>{ const k=r.to||""; (who[k]=who[k]||[]).push(r); });
+  const more=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
+    const [nm,img,num]=id?(RV[id]||["?","",""]):["받는 선수 없음","",""],
+          cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0);
+    const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
+      :`<span class="gh">${esc(num||"")}</span>`;
+    return `<div class="prr">${face}<em>${esc(nm)}</em><i>${cc.length}/${rs.length} · ${yy}야드</i></div>`;
+  }).join("");
+  return {title:`${PZN[z]||z} · ${PZD[d]||d}`,
+    rows:[["시도",L.length],["성공",c.length],["성공률",L.length?(c.length/L.length*100).toFixed(1)+"%":"—"],
+      ["야드",yds],["TD",td],["INT",it],["패서 레이팅",rt==null?"—":rt.toFixed(1)]], more};
 }
 window.panelOpen=panelOpen;
 window.boxPanels=boxPanels;
