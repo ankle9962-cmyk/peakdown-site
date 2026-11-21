@@ -394,13 +394,16 @@ function paneBox(box,g,bx,opt){
 
 // ── 선수 패널 ── 자료는 누를 때 받습니다(선수 한 명 = 파일 하나).
 // 한 덩이로 감쌉니다 — 보드는 스크립트 하나라 같은 이름(RT·f1 등)이 있으면 보드 전체가
-// 멈춥니다. 밖으로는 panelOpen·boxPanels 두 이름만 냅니다(BOX_JS 가 부릅니다).
+// 멈춥니다. 밖으로는 panelOpen·boxPanels·panelIndex 세 이름만 냅니다.
 (()=>{
 const PJC=new Map();
 function pjson(url){
   if(!PJC.has(url)) PJC.set(url,fetch(url).then(r=>r.ok?r.json():null).catch(()=>null));
   return PJC.get(url);
 }
+// 필터 칸 — content_render.PANEL_FILTERS 를 빌드가 그대로 넣습니다(순위 조합 열쇠와 한 벌).
+const PFIL={"rec":[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]]],"rush":[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],"qb":[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],["tt","타이밍",[["","전체"],["QUICK","퀵 패스"],["LONG","레이트 패스"]]],["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]]};
+const panelIndex=()=>pjson("/panels/index.json");
 // 그 경기 박스의 선수 줄 — 패널 목록에 있는 선수(그 종류)만 누를 수 있게 하고,
 // 수비 확장 열(압박·미스드 태클)이 있으면 예전 표와 바꿔 끼웁니다.
 function boxPanels(root){
@@ -409,7 +412,7 @@ function boxPanels(root){
   const yr=bx.dataset.season, gid=bx.dataset.gid;
   // 목록(/panels/index.json = {시즌:[경기 id…]})에 있는 경기만 받습니다 — 패널이 없는
   // 경기(2025·워크북에 아직 없는 주)에 404 요청을 내지 않게.
-  pjson("/panels/index.json").then(all=>{
+  panelIndex().then(all=>{
     if(!all||!(all[yr]||[]).includes(gid)) return null;
     return pjson(`/panels/${encodeURIComponent(yr)}/g_${encodeURIComponent(gid)}.json`);
   }).then(ix=>{
@@ -435,7 +438,7 @@ function boxPanels(root){
   });
 }
 
-let PS=null, PSH=null;
+let PS=null, PSH=null, PTOK=0, GID=0;
 function pnlShell(){
   if(PSH) return PSH;
   const ov=document.createElement("div");
@@ -446,46 +449,50 @@ function pnlShell(){
   addEventListener("keydown",e=>{ if(e.key==="Escape"&&ov.classList.contains("on")) pnlClose(); });
   const el=ov.firstElementChild;
   el.addEventListener("click",pnlClick);
+  el.addEventListener("keydown",e=>{          // 맵 가지 — Enter·Space 로도 고정(가지 옆에)
+    const hb=(e.key==="Enter"||e.key===" ")&&e.target.closest&&e.target.closest(".hb");
+    if(!hb) return;
+    e.preventDefault();
+    const box=el.querySelector(".pmapbox"), b=box&&box.getBoundingClientRect(), r=hb.getBoundingClientRect();
+    pnlPin(hb.dataset.h,b?r.right-b.left+8:8,b?r.top-b.top:8);
+  });
   el.addEventListener("mousemove",pnlHover);
   el.addEventListener("mouseleave",()=>pnlTip(null));
   PSH={ov,el};
   return PSH;
 }
-function pnlClose(){ if(PSH) PSH.ov.classList.remove("on"); PS=null; }
+function pnlClose(){ if(PSH) PSH.ov.classList.remove("on"); PS=null; PTOK++; }
 // 자료 줄은 [값…] 배열로 옵니다. 한 번 열 때 cols 이름으로 객체로 바꿔 둡니다.
 function pnlRows(K){
   const cs=(K&&K.cols)||[];
   return ((K&&K.rows)||[]).map(r=>{ const o={}; cs.forEach((c,i)=>o[c]=r[i]); return o; });
 }
-async function panelOpen(id,kind,gid,yr){
-  const sh=pnlShell();
+const KLB={qb:"패스",rush:"러싱",rec:"리시빙"};
+// gid 가 있으면 그 경기 패널(박스스코어), opt.season 이면 시즌 패널(보드 로스터 — 그 경기 없이
+// 시즌 한 열 · 맵도 시즌). opt.alt = {label, fn}: 다른 패널(보드의 시즌 비교)로 넘어가는 단추.
+async function panelOpen(id,kind,gid,yr,opt){
+  opt=opt||{};
+  const sh=pnlShell(), tok=++PTOK;
   sh.ov.classList.add("on");
+  sh.el.classList.remove("k-qb");
   sh.el.innerHTML=`<div class="bxin"><div class="bxload">불러오는 중…</div></div>`;
   const P=await pjson(`/panels/${encodeURIComponent(yr)}/${encodeURIComponent(id)}.json`);
+  if(tok!==PTOK) return;                  // 그사이 닫았거나 다른 선수를 눌렀습니다
   if(!P||!P[kind]){
     sh.el.innerHTML=`<button class="x" aria-label="닫기">&times;</button>
       <div class="bxin"><div class="bxload">자료 없음</div></div>`;
     return;
   }
-  PS={P,kind,gid:String(gid),yr,f:{},scope:"game",
-      R:pnlRows(P[kind]), RR:kind==="qb"?pnlRows(P.qb.rush):[]};
+  PS={P,yr,gid:String(gid||""),season:!!opt.season,alt:opt.alt||null};
+  pnlKind(kind);
   sh.el.style.setProperty("--tc",P.c1||"#2b5fd9");
   pnlDraw();
 }
+function pnlKind(kind){
+  Object.assign(PS,{kind,f:{},pin:null,scope:PS.season?"season":"game",
+    R:pnlRows(PS.P[kind]),RR:kind==="qb"?pnlRows(PS.P.qb.rush):[]});
+}
 
-// ── 종류별 설정 ── 필터 [열, 이름, [[값, 글자]…]] · 값에 "|" 를 쓰면 그중 하나면 됩니다.
-// 러싱의 피스톨은 샷건에 넣었습니다(사양은 언더센터 / 샷건 두 칸).
-const PFIL={
-  rec:[["al","정렬",[["","전체"],["WIDE","와이드"],["SLOT","슬롯"],["TIGHT","타이트"],["BACKFIELD","백필드"]]],
-       ["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]]],
-  rush:[["qa","대형",[["","전체"],["UNDER_CENTER","언더센터"],["SHOTGUN|PISTOL","샷건"]]],
-        ["bx","박스",[["","전체"],["LIGHT","라이트"],["NEUTRAL","보통"],["STACKED","헤비"]]]],
-  qb:[["qa","대형",[["","전체"],["SHOTGUN","샷건"],["UNDER_CENTER","언더센터"],["PISTOL","피스톨"]]],
-      ["pa","플레이액션",[["","전체"],["1","있음"],["0","없음"]]],
-      ["pr","압박",[["","전체"],["1","받음"],["0","안 받음"]]],
-      ["bl","블리츠",[["","전체"],["1","있음"],["0","없음"]]],
-      ["ad","패스 거리",[["","전체"],["S","10야드 미만"],["I","10~19"],["D","20+"]]]],
-};
 const pnlFilt=()=>Object.values(PS.f).some(v=>v);
 // 필터 열이 그 줄에 없으면(예: 디자인된 QB 런의 압박) 그 필터에서는 빠집니다.
 function pnlOK(r){
@@ -495,13 +502,20 @@ function pnlOK(r){
   }
   return true;
 }
+// 순위 — 필터가 없으면 rk, 걸면 그 조합의 rkf(필터마다 고른 칸 번호를 이은 열쇠).
+const rkKey=()=>PFIL[PS.kind].map(([k,,opts])=>Math.max(0,opts.findIndex(o=>o[0]===(PS.f[k]||"")))).join("");
+function rkOf(K,k){
+  if(!pnlFilt()) return (K.rk||{})[k]||null;
+  const i=(K.rkk||[]).indexOf(k), v=i<0?0:(((K.rkf||{})[rkKey()]||[])[i]||0);
+  return v?[Math.abs(v),v<0?1:0]:null;
+}
 const ALN={WIDE:"와이드",SLOT:"슬롯",TIGHT:"타이트",BACKFIELD:"백필드"};
 function rating(c,a,y,t,i){
   if(!a) return null;
   const cl=v=>Math.max(0,Math.min(2.375,v));
   return (cl((c/a-.3)*5)+cl((y/a-3)*.25)+cl(t/a*20)+cl(2.375-i/a*25))/6*100;
 }
-// 집계 — 표와 맵이 같은 함수를 씁니다.
+// 집계 — 표와 맵이 같은 함수를 씁니다(nflmaster.season_totals · _part 와 같은 셈).
 const PAGG={
   rec(L){
     const t=L.filter(p=>+p.tgt), c=t.filter(p=>+p.cmp), air=t.filter(p=>p.air!=null&&p.air!==""),
@@ -539,70 +553,103 @@ const PROW={
 const rkTx=([r,t])=>`(${t?"공동 ":""}${r}위)`;
 function pnlAgg(rows,rrows){ return PS.kind==="qb"?PAGG.qb(rows,rrows):PAGG[PS.kind](rows); }
 function pnlTable(){
-  const {P,kind,gid}=PS, K=P[kind], filt=pnlFilt();
+  const {P,kind,gid}=PS, K=P[kind], filt=pnlFilt(), one=PS.season;
   const all=PS.R.filter(pnlOK), rr=PS.RR.filter(pnlOK);
-  const gm=pnlAgg(all.filter(r=>String(r.g)===gid), rr.filter(r=>String(r.g)===gid)),
-        ss=pnlAgg(all,rr);
+  const ss=pnlAgg(all,rr),
+        gm=one?null:pnlAgg(all.filter(r=>String(r.g)===gid), rr.filter(r=>String(r.g)===gid));
   const get=(a,k)=>k.startsWith("al.")?a.al[k.slice(3)]:a[k];
   const fmt=(v,d)=>v==null?null:(d?Number(v).toFixed(d):String(v));
   const cell=(v,d,u,rk,ex)=>{
     if(v==null) return `<td class="na">—</td>`;
-    const hot=rk&&!filt&&rk[0]<=5;
-    return `<td class="${hot?"hot":""}">${fmt(v,d)}${u==="%"?"%":""}${ex||""}${rk&&!filt?`<span class="rk">${rkTx(rk)}</span>`:""}</td>`;
+    return `<td class="${rk&&rk[0]<=5?"hot":""}">${fmt(v,d)}${u==="%"?"%":""}${ex||""}${
+      rk?`<span class="rk">${rkTx(rk)}</span>`:""}</td>`;
   };
-  const g=(P.games||{})[gid]||{}, ng=Object.keys(P.games||{}).length;
+  const g=(P.games||{})[gid]||{}, ng=Object.keys(P.games||{}).length, gap=one?"":"<td></td>";
   let body="";
   for(const r of PROW[kind]){
     if(r.length<=2&&(r.length===1||!/^[a-z]/.test(r[1]))){
-      body+=`<tr class="gh"><th>${r[0]}${r[1]?`<small>${r[1]}</small>`:""}</th><td></td><td></td></tr>`; continue;
+      body+=`<tr class="gh"><th>${r[0]}${r[1]?`<small>${r[1]}</small>`:""}</th>${gap}<td></td></tr>`; continue;
     }
     const [lb,k,d,u]=r;
     if(u==="pfr"){            // 경기 단위 자료 — 필터를 걸면 낼 수 없습니다
       const b=K.btk||{};
-      body+=`<tr><th>${lb}</th>${cell(filt?null:b[gid],0)}${cell(filt?null:b.season,0)}</tr>`; continue;
+      body+=`<tr><th>${lb}</th>${one?"":cell(filt?null:b[gid],0)}${cell(filt?null:b.season,0)}</tr>`; continue;
     }
     const sx=u==="sep"?(a=>a.sepN?`<small>(태그 ${a.sepN})</small>`:""):null;
-    body+=`<tr><th>${lb}</th>${cell(get(gm,k),d,u,null,sx&&sx(gm))}${
-      cell(get(ss,k),d,u,(K.rk||{})[k],sx&&sx(ss))}</tr>`;
+    body+=`<tr><th>${lb}</th>${one?"":cell(get(gm,k),d,u,null,sx&&sx(gm))}${
+      cell(get(ss,k),d,u,rkOf(K,k),sx&&sx(ss))}</tr>`;
   }
-  return `<table class="pst"><thead><tr><th></th>
-      <th>그 경기<b>${g.home?"vs":"@"} ${esc(g.opp||"")} · ${esc(String(g.w||""))}주</b></th>
+  const gh=one?"":`<th>그 경기<b>${g.home?"vs":"@"} ${esc(g.opp||"")} · ${esc(String(g.w||""))}주</b></th>`;
+  return `<table class="pst"><thead><tr><th></th>${gh}
       <th>시즌<b>${esc(PS.yr)} · ${ng}경기</b></th></tr></thead><tbody>${body}</tbody></table>`;
 }
 function pnlChips(){
   return PFIL[PS.kind].map(([k,lb,opts])=>`<div class="pfg"><span>${lb}</span>${opts.map(([v,t])=>
     `<button class="chip" data-fk="${k}" data-fv="${v}" aria-pressed="${(PS.f[k]||"")===v}">${t}</button>`).join("")}</div>`).join("");
 }
+// 시즌 패널의 종류 단추 — 그 선수가 가진 것만. 하나뿐이면 단추 없이 예전 패널 단추만.
+function pnlKinds(){
+  if(!PS.season) return "";
+  const ks=["qb","rush","rec"].filter(k=>PS.P[k]);
+  const tabs=ks.length>1?ks.map(k=>`<button class="pk" data-kind="${k}" aria-pressed="${k===PS.kind}">${KLB[k]}</button>`).join(""):"";
+  const alt=PS.alt?`<button class="pk pkalt" data-alt="1">${esc(PS.alt.label||"")}</button>`:"";
+  return tabs||alt?`<div class="pkb">${tabs}${alt}</div>`:"";
+}
 function pnlScope(){
+  if(PS.season) return "";
   return `<div class="pscope">
     <button class="chip" data-sc="game" aria-pressed="${PS.scope==="game"}">그 경기</button>
     <button class="chip" data-sc="season" aria-pressed="${PS.scope==="season"}">시즌</button></div>`;
 }
 function pnlDraw(){
-  const {P,kind,gid,yr}=PS, g=(P.games||{})[gid]||{};
+  const {P,kind,gid,yr}=PS, g=(P.games||{})[gid]||{}, ng=Object.keys(P.games||{}).length;
   // 등번호 자리표시를 밑에 깔고 사진을 위에 덮습니다 — 사진이 없거나 못 받으면 번호가 보입니다.
   const shot=`<div class="gh">${esc(P.num||"?")}</div>`+(P.img?`<img src="/photos/${
     encodeURIComponent(P.img)}" alt="" onerror="this.remove()">`:"");
   const map=kind==="rec"?pnlScope()+pnlRoute():kind==="rush"?pnlScope()+pnlGaps():pnlPassMap();
+  const where=PS.season?`<b>${esc(P.team||"")}</b> · ${esc(yr)} 시즌 · ${ng}경기`
+    :`<b>${esc(P.team||"")} ${g.home?"vs":"@"} ${esc(g.opp||"")}</b> · ${esc(yr)} ${esc(String(g.w||""))}주`;
+  PSH.el.classList.toggle("k-qb",kind==="qb");
   PSH.el.innerHTML=`<button class="x" aria-label="닫기">&times;</button><div class="bxin">
     <div class="pf"><div class="pshot">${shot}</div>
       <div class="pname">${esc(P.name)}${P.sample?`<span class="psmp">샘플</span>`:""}</div>
       <div class="ppos">${esc(P.pos||"")}${P.num?" · #"+esc(P.num):""}</div>
       ${P.draft?`<div class="pline">${esc(P.draft)}</div>`:""}${P.college?`<div class="pline">${esc(P.college)}</div>`:""}
-      <div class="pgame"><b>${esc(P.team||"")} ${g.home?"vs":"@"} ${esc(g.opp||"")}</b> · ${esc(yr)} ${esc(String(g.w||""))}주</div></div>
-    <div class="pmain"><div class="pfil">${pnlChips()}</div>
+      <div class="pgame">${where}</div></div>
+    <div class="pmain">${pnlKinds()}<div class="pfil">${pnlChips()}</div>
       <div class="pbody k-${kind}"><div class="ptab">${pnlTable()}</div><div class="pmap">${map}</div></div></div></div>`;
+  pnlPills();
+  pnlPinFit();
 }
+// 고정 — {h: 가지 열쇠, x, y: 맵 상자 안 자리(px)}. 같은 가지를 다시 누르면 풉니다. 필터·범위를
+// 바꿔도 남아서, 같은 루트를 조건마다 견줘 볼 수 있습니다.
+const pinH=()=>PS.pin&&PS.pin.h;
+function pnlPin(h,x,y){ PS.pin=pinH()===h?null:{h,x,y}; pnlDraw(); }
 function pnlClick(e){
   const t=e.target;
   if(t.closest(".x")){ pnlClose(); return; }
+  if(t.closest(".pinx")){ PS.pin=null; pnlDraw(); return; }
+  const pk=t.closest(".pk");
+  if(pk){
+    if(pk.dataset.alt){ const a=PS.alt; pnlClose(); if(a&&a.fn) a.fn(); return; }
+    if(pk.dataset.kind&&pk.dataset.kind!==PS.kind){ pnlKind(pk.dataset.kind); pnlDraw(); }
+    return;
+  }
+  const hb=t.closest(".hb");
+  if(hb&&PS.kind!=="qb"){
+    // 떠 있던 말풍선 자리에 그대로 고정합니다(없으면 누른 자리 옆).
+    const box=PSH.el.querySelector(".pmapbox"), b=box.getBoundingClientRect(), tip=box.querySelector(".ptip");
+    const on=tip&&tip.style.display==="block";
+    pnlPin(hb.dataset.h,on?parseFloat(tip.style.left):e.clientX-b.left+14,on?parseFloat(tip.style.top):e.clientY-b.top+12);
+    return;
+  }
   const c=t.closest(".chip"); if(!c) return;
   if(c.dataset.sc) PS.scope=c.dataset.sc;
   else if(c.dataset.fk) PS.f[c.dataset.fk]=c.dataset.fv;
   pnlDraw();
 }
 
-// ── 맵 공용 — 가지·화살표에 마우스를 올리면 그 묶음의 기록이 뜹니다 ──
+// ── 맵 공용 — 가지에 올리면 그 묶음의 기록이 뜨고, 누르면 맵 밑에 고정됩니다 ──
 const pnlIn=r=>PS.scope==="game"?String(r.g)===PS.gid:true;
 const f1=n=>n.toFixed(1);
 function pnlTip(e){
@@ -613,7 +660,9 @@ function pnlTip(e){
   if(svg) svg.querySelectorAll(".hb.on").forEach(x=>{ if(x!==g) x.classList.remove("on"); });
   if(!g){ tip.style.display="none"; if(svg) svg.classList.remove("hov"); return; }
   g.classList.add("on"); if(svg) svg.classList.add("hov");
-  tip.innerHTML=PS.kind==="rec"?pnlRouteTip(g.dataset.h):pnlGapTip(g.dataset.h);
+  // 고정한 가지 위에서는 띄우지 않습니다 — 같은 기록이 고정 카드에 있습니다.
+  if(g.dataset.h===pinH()){ tip.style.display="none"; return; }
+  tip.innerHTML=tipT(PS.kind==="rec"?routeInfo(g.dataset.h):gapInfo(g.dataset.h));
   tip.style.display="block";
   const b=box.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
   let x=e.clientX-b.left+14, y=e.clientY-b.top+12;
@@ -628,8 +677,88 @@ const tipCtx=()=>{
     const o=opts.find(x=>x[0]===v); if(o) out.push(lb+" "+o[1]); }
   return out.join(" · ");
 };
-const tipT=(title,rows)=>`<div class="tt">${title}${tipCtx()?`<i>${esc(tipCtx())}</i>`:""}</div><table>${
-  rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</table>`;
+const tipHead=title=>`<div class="tt">${esc(title)}${tipCtx()?`<i>${esc(tipCtx())}</i>`:""}</div>`;
+const tipT=({title,rows})=>tipHead(title)+`<table>${rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</table>`;
+function pnlPinCard(){
+  if(!PS.pin) return "";
+  const p=PS.pin, info=PS.kind==="rec"?routeInfo(p.h):gapInfo(p.h);
+  return `<div class="ppin" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px">
+    <button class="pinx" aria-label="고정 풀기">&times;</button>${tipT(info)}</div>`;
+}
+// 고정 카드가 맵 상자 밖으로 나가지 않게 — 그린 뒤 크기를 재서 안쪽으로 당깁니다.
+function pnlPinFit(){
+  const box=PSH&&PSH.el.querySelector(".pmapbox"), c=box&&box.querySelector(".ppin");
+  if(!c) return;
+  const W=box.clientWidth, H=box.clientHeight;
+  c.style.left=Math.max(4,Math.min(parseFloat(c.style.left)||4,W-c.offsetWidth-4))+"px";
+  c.style.top=Math.max(4,Math.min(parseFloat(c.style.top)||4,H-c.offsetHeight-4))+"px";
+}
+
+// ── 맵 그림 공용 — 둥글게 꺾이는 선 · 갈라지는 곳에서 옅게 시작해 끝에서 진해지는 팀 색 ·
+// 끝점 동그라미 · 알약 이름표. 굵기는 뛴(시도한) 횟수입니다.
+function rpath(P,r){
+  let d=`M${f1(P[0][0])},${f1(P[0][1])}`;
+  for(let i=1;i<P.length-1;i++){
+    const [ax,ay]=P[i-1], [bx,by]=P[i], [cx,cy]=P[i+1];
+    const l1=Math.hypot(bx-ax,by-ay)||1, l2=Math.hypot(cx-bx,cy-by)||1, k=Math.min(r,l1/2,l2/2);
+    d+=` L${f1(bx-(bx-ax)/l1*k)},${f1(by-(by-ay)/l1*k)} Q${f1(bx)},${f1(by)} ${
+      f1(bx+(cx-bx)/l2*k)},${f1(by+(cy-by)/l2*k)}`;
+  }
+  const z=P[P.length-1];
+  return d+` L${f1(z[0])},${f1(z[1])}`;
+}
+// pts 는 px. d 를 주면 그 경로를 씁니다(러닝 맵의 곡선). lab = [글자, 숫자, 앵커, dx, dy].
+function branch(key,pts,n,mx,lab,d,o0){
+  const c=PS.P.c1||"#2b5fd9", w=3.5+8.5*Math.sqrt(n/mx), id=`pg${++GID}`;
+  const [x0,y0]=pts[0], [x1,y1]=pts[pts.length-1], path=d||rpath(pts,24);
+  const [txt,anc,dx,dy]=lab, ty=y1+dy, s0=o0==null?0:o0;
+  // 색은 갈라지는 곳에서 비어 있다가(o0, 러닝은 옅게 보임) 끝으로 갈수록 진해집니다 — 줄기와 겹치는 머리는
+  // 보이지 않아 줄기에서 가지가 돋아나는 모양이 됩니다. 번짐도 같은 그러데이션.
+  return `<g class="hb${pinH()===key?" pin":""}" data-h="${esc(key)}" tabindex="0" role="button">
+    <linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x1)}" y2="${f1(y1)}">
+      <stop offset="0" stop-color="${c}" stop-opacity="${s0}"/><stop offset=".2" stop-color="${c}" stop-opacity="${Math.max(s0,.55)}"/>
+      <stop offset="1" stop-color="${c}"/></linearGradient>
+    <path d="${path}" fill="none" stroke="url(#${id})" stroke-opacity=".14" stroke-width="${f1(w+9)}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${path}" fill="none" stroke="url(#${id})" stroke-width="${f1(w)}" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${f1(x1)}" cy="${f1(y1)}" r="${f1(w/2+4)}" fill="${c}"/>
+    <circle cx="${f1(x1)}" cy="${f1(y1)}" r="${f1(Math.max(2.2,w/2-.5))}" fill="#0c1220"/>
+    <path d="${path}" fill="none" stroke="transparent" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="pl"><rect rx="11" height="22" fill="#0f1729" stroke="#33415f" stroke-opacity=".9"/>
+      <text x="${f1(x1+dx)}" y="${f1(ty+4.6)}" font-size="13" text-anchor="${anc}">${txt}</text></g></g>`;
+}
+// 이름표 알약 — 그린 뒤 글자 폭을 재서 바탕을 맞춥니다(글꼴마다 폭이 달라 어림하지 않습니다).
+function pnlPills(){
+  const svg=PSH&&PSH.el.querySelector("svg.pfld"); if(!svg) return;
+  svg.querySelectorAll(".pl").forEach(g=>{
+    const t=g.querySelector("text"), r=g.querySelector("rect"); if(!t||!r) return;
+    let b; try{ b=t.getBBox(); }catch(_){ return; }
+    if(!b||!b.width) return;
+    r.setAttribute("x",f1(b.x-9)); r.setAttribute("y",f1(b.y+b.height/2-11));
+    r.setAttribute("width",f1(b.width+18));
+  });
+}
+// 필드 바탕 — 5야드마다 옅은 줄, LOS 는 팀 색(번짐 한 겹).
+function fieldBase(W,H,ly,step){
+  const c=PS.P.c1||"#2b5fd9";
+  let o=`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#pfg${GID})"/>`;
+  for(let y=ly-step;y>0;y-=step) o+=`<line x1="0" x2="${W}" y1="${f1(y)}" y2="${f1(y)}" stroke="rgba(255,255,255,.045)"/>`;
+  for(let y=ly+step;y<H;y+=step) o+=`<line x1="0" x2="${W}" y1="${f1(y)}" y2="${f1(y)}" stroke="rgba(255,255,255,.03)"/>`;
+  o+=`<line x1="0" x2="${W}" y1="${ly}" y2="${ly}" stroke="${c}" stroke-opacity=".22" stroke-width="7"/>`;
+  o+=`<line x1="0" x2="${W}" y1="${ly}" y2="${ly}" stroke="${c}" stroke-width="2"/>`;
+  o+=`<text x="10" y="${ly-8}" font-size="11.5" fill="${c}" font-weight="800" letter-spacing=".08em">LOS</text>`;
+  return o;
+}
+function fieldDefs(){
+  const c=PS.P.c1||"#2b5fd9";
+  return `<defs><radialGradient id="pfg${GID}" cx="50%" cy="78%" r="75%"><stop offset="0" stop-color="${c}" stop-opacity=".09"/>
+    <stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>`;
+}
+function origin(x,y,label){
+  const c=PS.P.c1||"#2b5fd9";
+  return `<circle cx="${x}" cy="${y}" r="21" fill="${c}" opacity=".16"/>
+    <circle cx="${x}" cy="${y}" r="13.5" fill="${c}" stroke="#0c1220" stroke-width="3"/>
+    <text x="${x}" y="${y+4.6}" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">${esc(label||"")}</text>`;
+}
 
 // ── 리시버 — 루트 트리(정렬을 합친 트리 하나). 기록에 필드 좌우와 실제 경로가 없어 NFL Pro 의
 // 방향 분류를 정형화했고, 안쪽(필드 가운데 쪽)을 왼쪽, 바깥쪽을 오른쪽에 그립니다.
@@ -637,112 +766,99 @@ const RT={IN:"인 (안쪽)",OUT:"아웃 (바깥)",VERTICAL:"버티컬","IN|VERTI
   "OUT|VERTICAL":"아웃 + 버티컬",WR_SCREEN:"WR 스크린",RB_SCREEN:"RB 스크린"};
 const RTS={IN:"인",OUT:"아웃",VERTICAL:"버티컬","IN|VERTICAL":"인+버티컬","OUT|VERTICAL":"아웃+버티컬",
   WR_SCREEN:"WR스크린",RB_SCREEN:"RB스크린"};
-const TS_=15, TXL=-15, TYT=33, TW=30*TS_, TH=40*TS_;
+const TS_=15, TXL=-15, TYT=31, TW=30*TS_, TH=37*TS_;
 const tpx=x=>(x-TXL)*TS_, tpy=y=>(TYT-y)*TS_;
-const RSH={"VERTICAL":[[0,12],[0,29]],"IN|VERTICAL":[[0,12],[-8,26]],"OUT|VERTICAL":[[0,12],[8,24]],
-  "IN":[[0,8],[-10,9]],"OUT":[[0,6],[9,6]],
-  "WR_SCREEN":[[0,0],[-1,-1.8],[-6.5,-2.8]],"RB_SCREEN":[[0,0],[2.4,-3.6],[8.5,-3.2]]};
-const RLB={"VERTICAL":[0,-11,"middle"],"IN|VERTICAL":[-5,-5,"end"],"OUT|VERTICAL":[5,-5,"start"],
-  "IN":[-7,4,"end"],"OUT":[7,4,"start"],"WR_SCREEN":[-7,4,"end"],"RB_SCREEN":[7,4,"start"]};
-// 선은 화살촉 밑변에서 끊고 화살촉은 굵기에 맞춰 따로 그립니다(굵은 가지에도 촉이 보이게).
-function arrow(P,w){
-  const [x1,y1]=P[P.length-2], [x2,y2]=P[P.length-1];
-  const L=Math.hypot(x2-x1,y2-y1)||1, ux=(x2-x1)/L, uy=(y2-y1)/L, nx=-uy, ny=ux;
-  const a=8+w*1.1, hw=a*.55, bx=x2-ux*a*.55, by=y2-uy*a*.55, tx=x2+ux*a*.45, ty=y2+uy*a*.45;
-  return {d:"M"+[...P.slice(0,-1),[bx,by]].map(([x,y])=>`${f1(x)},${f1(y)}`).join(" L"),
-    hit:"M"+P.map(([x,y])=>`${f1(x)},${f1(y)}`).join(" L"),
-    head:`M${f1(tx)},${f1(ty)} L${f1(bx+nx*hw)},${f1(by+ny*hw)} L${f1(bx-nx*hw)},${f1(by-ny*hw)} Z`,tx,ty};
-}
-function branch(key,pts,n,mx,lab,anc,dx,dy){
-  const w=2.5+9.5*n/mx, g=arrow(pts,w), c=PS.P.c1||"#2b5fd9";
-  return `<g class="hb" data-h="${esc(key)}" opacity="${(.55+.45*n/mx).toFixed(2)}">
-    <path d="${g.d}" fill="none" stroke="${c}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${g.head}" fill="${c}"/>
-    <path d="${g.hit}" fill="none" stroke="transparent" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="${f1(g.tx+dx)}" y="${f1(g.ty+dy)}" font-size="13" text-anchor="${anc}" paint-order="stroke"
-      stroke="#0c1220" stroke-width="4" stroke-linejoin="round">${lab}</text></g>`;
-}
-function fieldBase(){
-  const c=PS.P.c1||"#2b5fd9";
-  let o="";
-  for(let y=-5;y<=30;y+=5) if(y) o+=`<line x1="0" x2="${TW}" y1="${tpy(y)}" y2="${tpy(y)}" stroke="rgba(255,255,255,.05)"/>`;
-  o+=`<line x1="0" x2="${TW}" y1="${tpy(0)}" y2="${tpy(0)}" stroke="${c}" stroke-width="2.5" opacity=".85"/>`;
-  o+=`<text x="8" y="${tpy(0)-7}" font-size="12" fill="${c}" font-weight="800">LOS</text>`;
-  return o;
-}
+// 가지(야드) — 줄기에서 조금 아래부터 시작해 둥글게 꺾입니다. 줄기는 회색 하나를 같이 씁니다.
+const RSH={"VERTICAL":[[0,12],[0,28]],"IN|VERTICAL":[[0,11.8],[0,13.5],[-7.5,25.5]],
+  "OUT|VERTICAL":[[0,11.8],[0,13.5],[7.5,24]],"IN":[[0,7.3],[0,9],[-10,10]],"OUT":[[0,4.8],[0,6.5],[9.5,6.5]],
+  "WR_SCREEN":[[0,0],[-1.3,-2.3],[-7,-2.7]],"RB_SCREEN":[[0,0],[2.2,-3.5],[8.5,-3.1]]};
+// 이름표 — [앵커, dx, dy](끝점 기준 px).
+const RLB={"VERTICAL":["middle",0,-26],"IN|VERTICAL":["middle",0,-26],"OUT|VERTICAL":["middle",0,-26],
+  "IN":["end",-16,0],"OUT":["start",16,0],"WR_SCREEN":["end",-16,0],"RB_SCREEN":["start",16,0]};
+const STEM={"VERTICAL":13.5,"IN|VERTICAL":13.5,"OUT|VERTICAL":13.5,"IN":9,"OUT":6.5};
 function pnlRoute(){
   const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r)), list=L.filter(r=>r.rt), none=L.filter(r=>!r.rt);
-  const c=PS.P.c1||"#2b5fd9";
-  let o=`<svg class="pfld" viewBox="0 0 ${TW} ${TH}" role="img" aria-label="루트 트리">${fieldBase()}`;
-  o+=`<text x="8" y="${TH-10}" font-size="12.5" fill="#56637f" font-weight="700">← 안쪽</text>`;
-  o+=`<text x="${TW-8}" y="${TH-10}" font-size="12.5" fill="#56637f" font-weight="700" text-anchor="end">바깥 →</text>`;
+  GID++;
+  let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${TW} ${TH}" role="img" aria-label="루트 트리">${fieldDefs()}${
+    fieldBase(TW,TH,tpy(0),5*TS_)}`;
+  o+=`<text x="10" y="${TH-12}" font-size="12.5" fill="#56637f" font-weight="700">← 안쪽</text>`;
+  o+=`<text x="${TW-10}" y="${TH-12}" font-size="12.5" fill="#56637f" font-weight="700" text-anchor="end">바깥 →</text>`;
   if(!list.length&&!none.length) return `<div class="pmapbox">${o}<text x="${TW/2}" y="${tpy(14)}" font-size="15"
     fill="#7d8ca8" font-weight="700" text-anchor="middle">루트 없음</text></svg></div>`;
   const by={}; list.forEach(r=>(by[r.rt]=by[r.rt]||[]).push(r));
   const mx=Math.max(1,...Object.values(by).map(a=>a.length));
-  const top=["VERTICAL","IN|VERTICAL","OUT|VERTICAL"].some(r=>by[r])?12:by.IN?8:by.OUT?6:0;
-  if(top) o+=`<line x1="${tpx(0)}" x2="${tpx(0)}" y1="${tpy(0)}" y2="${tpy(top)}" stroke="#3a4764" stroke-width="5" stroke-linecap="round"/>`;
+  const top=Math.max(0,...Object.keys(by).map(k=>STEM[k]||0));
+  if(top) o+=`<line x1="${tpx(0)}" x2="${tpx(0)}" y1="${tpy(0)}" y2="${tpy(top)}" stroke="#3a4766" stroke-width="6" stroke-linecap="round"/>`;
   Object.entries(by).sort((a,b)=>a[1].length-b[1].length).forEach(([rt,arr])=>{
     const sh=RSH[rt]; if(!sh) return;
-    const [dx,dy,anc]=RLB[rt];
-    o+=branch(rt,sh.map(([x,y])=>[tpx(x),tpy(y)]),arr.length,mx,
-      `<tspan fill="#8f9bb5" font-weight="700">${RTS[rt]||esc(rt)}</tspan> <tspan fill="#e6ebf5" font-weight="800">${arr.length}</tspan>`,anc,dx,dy);
+    const [anc,dx,dy]=RLB[rt];
+    o+=branch(rt,sh.map(([x,y])=>[tpx(x),tpy(y)]),arr.length,mx,[`<tspan fill="#9aa6bf" font-weight="700">${
+      RTS[rt]||esc(rt)}</tspan><tspan fill="#f1f4fa" font-weight="800"> ${arr.length}</tspan>`,anc,dx,dy]);
   });
-  o+=`<circle cx="${tpx(0)}" cy="${tpy(0)}" r="11" fill="${c}" stroke="#0c1220" stroke-width="3"/>`;
-  o+=`<text x="${tpx(0)}" y="${tpy(0)+4.5}" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">${esc(PS.P.num||"")}</text>`;
-  o+=`<text x="${tpx(0)-18}" y="${tpy(0)-8}" font-size="12.5" fill="#8f9bb5" font-weight="700" text-anchor="end">루트 ${list.length}</text>`;
-  if(none.length){            // 루트 분류가 빈 스냅 — 방향을 모르니 가지 대신 LOS 옆에
-    const x=tpx(0)+17, y=tpy(0)-25, w=4*13+6+String(none.length).length*7.8+20;
-    o+=`<g class="hb" data-h="__none"><rect x="${x}" y="${y}" width="${f1(w)}" height="22" rx="11" fill="#0c1220"
-      stroke="#4a5878" stroke-dasharray="3 3"/><text x="${f1(x+10)}" y="${y+15.5}" font-size="12.5"><tspan fill="#8f9bb5"
-      font-weight="700">분류 없음</tspan> <tspan fill="#e6ebf5" font-weight="800">${none.length}</tspan></text></g>`;
+  o+=origin(tpx(0),tpy(0),PS.P.num);
+  o+=`<text x="${tpx(0)-26}" y="${tpy(0)-10}" font-size="12.5" fill="#8f9bb5" font-weight="700" text-anchor="end">루트 ${list.length}</text>`;
+  if(none.length){            // 루트 분류가 빈 스냅 — 방향을 모르니 가지 대신 LOS 옆 알약
+    const x=tpx(0)+30, y=tpy(0)-24;
+    o+=`<g class="hb${pinH()==="__none"?" pin":""}" data-h="__none" tabindex="0" role="button"><g class="pl">
+      <rect rx="11" height="22" fill="#0c1220" stroke="#4a5878" stroke-dasharray="3 3"/>
+      <text x="${x}" y="${y+4.6}" font-size="12.5"><tspan fill="#8f9bb5" font-weight="700">분류 없음</tspan><tspan
+        fill="#e6ebf5" font-weight="800"> ${none.length}</tspan></text></g></g>`;
   }
-  return `<div class="pmapbox">${o}</svg><div class="ptip"></div></div>`;
+  return `<div class="pmapbox">${o}</svg><div class="ptip"></div>${pnlPinCard()}</div>`;
 }
-function pnlRouteTip(h){
+function routeInfo(h){
   const nn=h==="__none", L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r)&&(nn?!r.rt:r.rt===h)), a=PAGG.rec(L);
-  return tipT(nn?"루트 분류 없음":esc(RT[h]||h),[[nn?"스냅":"뛴 횟수",L.length],["타겟",a.tgt],["캐치",a.cmp],
+  return {title:nn?"루트 분류 없음":(RT[h]||h), rows:[[nn?"스냅":"뛴 횟수",L.length],["타겟",a.tgt],["캐치",a.cmp],
     ["리시빙 야드",a.yds],["리시빙 TD",a.td],["타겟당 에어야드",a.adot==null?"—":a.adot.toFixed(1)],
-    ["세퍼레이션 OPEN",a.sepN?`${a.open} / ${a.sepN}`:"—"]]);
+    ["세퍼레이션 OPEN",a.sepN?`${a.open} / ${a.sepN}`:"—"]]};
 }
 
-// ── 러너 — 러닝 방향 맵. 기록지 설명의 일곱 방향(왼쪽 끝 … 오른쪽 끝)으로 화살표를 냅니다.
-const GAPS=[["LE","왼쪽 끝",-9],["LT","왼쪽 태클",-4.6],["LG","왼쪽 가드",-2.3],["M","가운데",0],
-  ["RG","오른쪽 가드",2.3],["RT","오른쪽 태클",4.6],["RE","오른쪽 끝",9]];
+// ── 러너 — 러닝 방향 맵. 기록지 설명의 일곱 방향(왼쪽 끝 … 오른쪽 끝)으로 갈래를 냅니다.
+// [키, 이름, LOS 를 지나는 x(야드), 끝점 x(px), 끝점 y(px)] — 끝점은 이름표가 겹치지 않게 엇갈립니다.
+const GAPS=[["LE","왼쪽 끝",-6.6,42,112],["LT","왼쪽 태클",-3.45,104,62],["LG","왼쪽 가드",-1.15,166,98],
+  ["M","가운데",0,225,48],["RG","오른쪽 가드",1.15,284,98],["RT","오른쪽 태클",3.45,346,62],
+  ["RE","오른쪽 끝",6.6,408,112]];
+const RW=450, RH=390, RLY=200, ROY=338;
 function pnlGaps(){
   const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r)), c=PS.P.c1||"#2b5fd9";
-  let o=`<svg class="pfld" viewBox="0 0 ${TW} ${TH*0.62}" role="img" aria-label="러닝 방향">`;
-  const H2=TH*0.62, ly=H2*0.42, by=H2*0.86;
-  o+=`<line x1="0" x2="${TW}" y1="${ly}" y2="${ly}" stroke="${c}" stroke-width="2.5" opacity=".85"/>`;
-  o+=`<text x="8" y="${ly-7}" font-size="12" fill="${c}" font-weight="800">LOS</text>`;
-  [-4.6,-2.3,0,2.3,4.6].forEach(x=>o+=`<rect x="${tpx(x)-9}" y="${ly+5}" width="18" height="12" rx="3" fill="#2a3550"/>`);
+  GID++;
+  let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${RW} ${RH}" role="img" aria-label="러닝 방향">${fieldDefs()}${
+    fieldBase(RW,RH,RLY,5*TS_)}`;
+  // 오라인 다섯 — 둥근 네모, 가운데가 센터.
+  [-4.6,-2.3,0,2.3,4.6].forEach(x=>o+=`<rect x="${f1(tpx(x)-11)}" y="${RLY+6}" width="22" height="15" rx="4"
+    fill="#1b2439" stroke="#33415f"/>`);
   const by_={}; L.forEach(r=>{ const k=r.gap||""; (by_[k]=by_[k]||[]).push(r); });
   const mx=Math.max(1,...GAPS.map(([k])=>(by_[k]||[]).length));
-  if(!L.length) o+=`<text x="${TW/2}" y="${H2*0.25}" font-size="15" fill="#7d8ca8" font-weight="700" text-anchor="middle">러닝 없음</text>`;
-  GAPS.forEach(([k,lb,x])=>{
+  if(!L.length) o+=`<text x="${RW/2}" y="${RLY*0.5}" font-size="15" fill="#7d8ca8" font-weight="700" text-anchor="middle">러닝 없음</text>`;
+  const ox=tpx(0);
+  GAPS.slice().sort((a,b)=>(by_[a[0]]||[]).length-(by_[b[0]]||[]).length).forEach(([k,lb,gx,ex,ey])=>{
     const arr=by_[k]||[]; if(!arr.length) return;
-    const a=PAGG.rush(arr), ex=tpx(x*1.15), ey=H2*0.13;
-    o+=branch(k,[[tpx(0),by],[tpx(x*0.35),ly+22],[ex,ey]],arr.length,mx,
-      `<tspan fill="#e6ebf5" font-weight="800">${arr.length}</tspan> <tspan fill="#8f9bb5" font-weight="700">${a.ypc==null?"":a.ypc.toFixed(1)}</tspan>`,
-      x<0?"end":x>0?"start":"middle",x<0?-4:x>0?4:0,x===0?-10:-2);
+    const a=PAGG.rush(arr), lx=tpx(gx);
+    // 러너 → LOS(그 방향 구멍) → 끝점: 부드러운 곡선 두 마디.
+    const d=`M${f1(ox)},${ROY-16} C${f1(ox)},${f1(ROY-62)} ${f1(lx)},${f1(RLY+64)} ${f1(lx)},${RLY+2}`
+      +` C${f1(lx)},${f1(RLY-40)} ${f1(ex)},${f1(ey+46)} ${f1(ex)},${f1(ey)}`;
+    // 이름표 — 시도(굵게) · 시도당 야드
+    const [anc,dx]=k==="LE"?["start",-12]:k==="RE"?["end",12]:["middle",0];
+    o+=branch(k,[[lx,RLY+30],[ex,ey]],arr.length,mx,[`<tspan fill="#f1f4fa" font-weight="800">${arr.length}회</tspan>${
+      a.ypc==null?"":`<tspan fill="#9aa6bf" font-weight="700"> ${a.ypc.toFixed(1)}</tspan>`}`,anc,dx,-26],d,.3);
   });
-  o+=`<circle cx="${tpx(0)}" cy="${by}" r="11" fill="${c}" stroke="#0c1220" stroke-width="3"/>`;
-  o+=`<text x="${tpx(0)}" y="${by+4.5}" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">${esc(PS.P.num||"")}</text>`;
+  o+=origin(ox,ROY,PS.P.num);
   const miss=(by_[""]||[]).length;
-  return `<div class="pmapbox">${o}</svg><div class="ptip"></div></div>`
+  return `<div class="pmapbox">${o}</svg><div class="ptip"></div>${pnlPinCard()}</div>`
     + (miss?`<span class="ptag">방향 미기록 ${miss}</span>`:"");
 }
-function pnlGapTip(h){
+function gapInfo(h){
   const G=GAPS.find(x=>x[0]===h), L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r)&&(r.gap||"")===h), a=PAGG.rush(L);
-  return tipT(esc(G?G[1]:h),[["시도",a.att],["야드",a.yds],["시도당",a.ypc==null?"—":a.ypc.toFixed(1)],
-    ["성공률",a.succ==null?"—":a.succ.toFixed(1)+"%"],["TD",a.td]]);
+  return {title:G?G[1]:h, rows:[["시도",a.att],["야드",a.yds],["시도당",a.ypc==null?"—":a.ypc.toFixed(1)],
+    ["성공률",a.succ==null?"—":a.succ.toFixed(1)+"%"],["TD",a.td]]};
 }
 
-// ── 쿼터백 — 패스맵(그 경기만). 3 구역 × 3 깊이, 칸마다 합계와 받은 선수.
+// ── 쿼터백 — 패스맵. 박스스코어는 그 경기, 시즌 패널은 시즌 전체. 3 구역 × 3 깊이, 칸마다 합계와
+// 받은 선수(많은 순 — 시즌은 다섯 명까지, 나머지는 +N).
 const BANDS=[["H","해시 사이"],["M","심"],["O","넘버 바깥"]], DEPTHS=[["D","20+"],["I","10~19"],["S","10 미만"]];
 function pnlPassMap(){
-  const L=PS.R.filter(r=>String(r.g)===PS.gid&&pnlOK(r)&&r.k==="P"), RV=PS.P.qb.recv||{};
-  const cells={}, unk=[];
+  const L=PS.R.filter(r=>(PS.season||String(r.g)===PS.gid)&&pnlOK(r)&&r.k==="P"), RV=PS.P.qb.recv||{};
+  const cells={}, unk=[], cap=PS.season?6:99;
   L.forEach(r=>{ if(!r.band||!r.ad) unk.push(r); else (cells[r.band+r.ad]=cells[r.band+r.ad]||[]).push(r); });
   const mx=Math.max(1,...Object.values(cells).map(a=>a.length));
   const tc=PS.P.c1||"#2b5fd9", rgb=tc.replace("#","").match(/../g).map(h=>parseInt(h,16)).join(",");
@@ -755,14 +871,15 @@ function pnlPassMap(){
       const c=arr.filter(r=>+r.cmp), yds=c.reduce((a,r)=>a+(+r.yds||0),0),
             td=arr.filter(r=>+r.td).length, it=arr.filter(r=>+r.int).length;
       const who={}; arr.forEach(r=>{ const k=r.to||"?"; (who[k]=who[k]||[]).push(r); });
-      const recv=Object.entries(who).sort((a,b)=>b[1].length-a[1].length).map(([id,rs])=>{
+      const ws=Object.entries(who).sort((a,b)=>b[1].length-a[1].length);
+      const recv='<div class="pzrs">'+ws.slice(0,cap).map(([id,rs])=>{
         const [nm,img,num]=RV[id]||["?","",""], cc=rs.filter(r=>+r.cmp), yy=cc.reduce((a,r)=>a+(+r.yds||0),0);
         const face=img?`<img src="/photos/${encodeURIComponent(img)}" alt="" onerror="this.style.visibility='hidden'">`
           :`<span class="gh">${esc(num||"?")}</span>`;
         // 칸이 좁아 성만 씁니다(접미사 Jr.·III 는 뺍니다). 전체 이름은 title 로.
         const last=String(nm).split(" ").filter(w=>!/^(Jr\.?|Sr\.?|II|III|IV|V)$/.test(w)).slice(-1)[0]||nm;
         return `<div class="pzr" title="${esc(nm)}">${face}<em>${esc(last)}</em><i>${cc.length}/${rs.length} · ${yy}</i></div>`;
-      }).join("");
+      }).join("")+(ws.length>cap?`<div class="pzr more">+${ws.length-cap}</div>`:"")+'</div>';
       o+=`<div class="pzc" style="background:rgba(${rgb},${(0.06+0.3*arr.length/mx).toFixed(2)})">
         <b>${c.length}/${arr.length}</b><s>${yds}야드${td?` · TD ${td}`:""}${it?` · INT ${it}`:""}</s>${recv}</div>`;
     });
@@ -772,6 +889,7 @@ function pnlPassMap(){
 }
 window.panelOpen=panelOpen;
 window.boxPanels=boxPanels;
+window.panelIndex=panelIndex;
 })();
 
 // ── 경기 결과 ─────────────────────────────────────────────────────────────
