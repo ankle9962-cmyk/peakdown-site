@@ -173,6 +173,7 @@ html.fit .bar{justify-content:center}
 .rchart .rlb2{fill:#9aa6bf;font-weight:700}
 .rchart .rclos{font-size:13px;font-weight:800;letter-spacing:.08em;fill:var(--team-a)}
 .rchart .rorg{font-size:14px;font-weight:800;fill:#fff}
+.rchart .rol{font-size:13px;font-weight:800;fill:#fff;letter-spacing:.02em}
 .rchart .rwd{font-size:13px;font-weight:700;fill:#7d8ca8}
 .rchart .rwb{fill:#c3cddf;font-weight:800}
 .zpop .zs{font-size:12.5px;color:#9aa6bf;font-weight:700;margin:-3px 0 9px;font-variant-numeric:tabular-nums}
@@ -1980,11 +1981,13 @@ const GAPS=[["LE","왼쪽 끝",150,66,128],["LT","왼쪽 태클",251,182,70],["L
   ["RE","오른쪽 끝",610,694,128]];
 const RW=760, RH=450, RLY=262, ROY=404, OLX=[208,294,380,466,552];
 // 바둑알 — 둥근 돌에 위쪽 왼편 반사광 한 점.
-function stone(x,y,r){
+// 작은 바둑알에 자리 약어(LT · LG · C · RG · RT) — 2026-11-21 사용자 "원형 말고 … 작은 바둑알에 포지션 약어".
+function stone(x,y,r,lb){
   return `<circle cx="${x}" cy="${y+3}" r="${r}" fill="rgba(0,0,0,.45)"/>
-    <circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
-    <ellipse cx="${f1(x-r*.32)}" cy="${f1(y-r*.36)}" rx="${f1(r*.34)}" ry="${f1(r*.2)}" fill="rgba(255,255,255,.22)"
-      transform="rotate(-28 ${f1(x-r*.32)} ${f1(y-r*.36)})"/>`;
+    <circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.82)" stroke-width="2"/>
+    <ellipse cx="${f1(x-r*.34)}" cy="${f1(y-r*.42)}" rx="${f1(r*.3)}" ry="${f1(r*.16)}" fill="rgba(255,255,255,.18)"
+      transform="rotate(-28 ${f1(x-r*.34)} ${f1(y-r*.42)})"/>
+    <text x="${x}" y="${y+4.5}" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">${lb||""}</text>`;
 }
 function pnlGaps(){
   const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r));
@@ -2009,7 +2012,7 @@ function pnlGaps(){
       a.ypc==null?"":`<tspan fill="#9aa6bf" font-weight="700"> ${a.ypc.toFixed(1)}</tspan>`}`,anc,dx,-28],d,.3);
   });
   // 오라인 다섯 — 갈래 위에 얹어, 갈래가 바둑알 사이로 빠져나가게 보입니다.
-  OLX.forEach(x=>o+=stone(x,RLY+30,24));
+  OLX.forEach((x,i)=>o+=stone(x,RLY+28,17,["LT","LG","C","RG","RT"][i]));
   o+=origin(ox,ROY,PS.P.num);
   const miss=(by_[""]||[]).length;
   return `<div class="pmapbox">${o}</svg><div class="ptip"></div>${pnlPinCard()}</div>`
@@ -2810,11 +2813,13 @@ function runChart(z,mark){
       <text x="${b1(px+11)}" y="${b1(py+18)}" class="rlb"><tspan class="rlb1">${lab}</tspan><tspan class="rlb2"> ${sub}</tspan></text></g>`;
   });
   // 오라인 다섯 — 큰 바둑알(위쪽 왼편 반사광). 갈래 위에 얹어 갈래가 돌 사이로 빠져나가게 보입니다.
-  RCOL.forEach(x=>{ const y=RCLY+34, r=30;
-    o+=`<circle cx="${x}" cy="${y+4}" r="${r}" fill="rgba(0,0,0,.45)"/>
-      <circle cx="${x}" cy="${y}" r="${r}" fill="url(#rstn)" stroke="rgba(255,255,255,.14)"/>
-      <ellipse cx="${b1(x-r*.32)}" cy="${b1(y-r*.36)}" rx="${b1(r*.34)}" ry="${b1(r*.2)}" fill="rgba(255,255,255,.22)"
-        transform="rotate(-28 ${b1(x-r*.32)} ${b1(y-r*.36)})"/>`; });
+  // 작은 바둑알에 자리 약어(LT · LG · C · RG · RT) — 2026-11-21 사용자 "원형 말고 … 작은 바둑알에 포지션 약어".
+  RCOL.forEach((x,i)=>{ const y=RCLY+30, r=20;
+    o+=`<circle cx="${x}" cy="${y+3}" r="${r}" fill="rgba(0,0,0,.45)"/>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="url(#rstn)" stroke="rgba(255,255,255,.82)" stroke-width="2"/>
+      <ellipse cx="${b1(x-r*.34)}" cy="${b1(y-r*.42)}" rx="${b1(r*.3)}" ry="${b1(r*.16)}" fill="rgba(255,255,255,.18)"
+        transform="rotate(-28 ${b1(x-r*.34)} ${b1(y-r*.42)})"/>
+      <text x="${x}" y="${y+5}" class="rol" text-anchor="middle">${["LT","LG","C","RG","RT"][i]}</text>`; });
   // 러너 — 팀이면 빈 동그라미, 고른 러너면 등번호.
   o+=`<circle cx="${ox}" cy="${RCOY}" r="26" style="fill:var(--team-a)" opacity=".16"/>
     <circle cx="${ox}" cy="${RCOY}" r="17" style="fill:var(--team-a)" stroke="#0c1220" stroke-width="3"/>
