@@ -58,7 +58,7 @@
 .bxpnl .chip[aria-pressed="true"]{color:#f1f4fa;border-color:var(--tc);box-shadow:inset 0 0 0 1px var(--tc)}
 .bxpnl .pbody{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,520px);gap:28px;
  align-items:start}
-.bxpnl .pbody.k-rush{grid-template-columns:minmax(0,1fr) minmax(360px,600px)}
+.bxpnl .pbody.k-rush{grid-template-columns:minmax(300px,.6fr) minmax(0,1.4fr)}
 .bxpnl .pbody.k-qb{grid-template-columns:minmax(340px,.8fr) minmax(0,1.55fr)}
 .bxpnl table.pst{width:100%;border-collapse:collapse}
 .bxpnl .pst th,.bxpnl .pst td{padding:10px 12px;border-bottom:1px solid #243049;font-size:17px;
@@ -463,7 +463,7 @@ function pnlClick(e){
   if(PS.pin&&t.closest(".pmapbox")&&!t.closest(".ppin")&&!t.closest(".hb")){ PS.pin=null; pnlDraw(); return; }
   const pk=t.closest(".pk");
   if(pk){
-    if(pk.dataset.alt){ const a=PS.alt; pnlClose(); if(a&&a.fn) a.fn(); return; }
+    if(pk.dataset.alt){ const a=PS.alt, k=PS.kind; pnlClose(); if(a&&a.fn) a.fn(k); return; }
     if(pk.dataset.kind&&pk.dataset.kind!==PS.kind){ pnlKind(pk.dataset.kind); pnlDraw(); }
     return;
   }
@@ -653,34 +653,45 @@ function routeInfo(h){
 }
 
 // ── 러너 — 러닝 방향 맵. 기록지 설명의 일곱 방향(왼쪽 끝 … 오른쪽 끝)으로 갈래를 냅니다.
-// [키, 이름, LOS 를 지나는 x(야드), 끝점 x(px), 끝점 y(px)] — 끝점은 이름표가 겹치지 않게 엇갈립니다.
-const GAPS=[["LE","왼쪽 끝",-6.6,42,112],["LT","왼쪽 태클",-3.45,104,62],["LG","왼쪽 가드",-1.15,166,98],
-  ["M","가운데",0,225,48],["RG","오른쪽 가드",1.15,284,98],["RT","오른쪽 태클",3.45,346,62],
-  ["RE","오른쪽 끝",6.6,408,112]];
-const RW=450, RH=390, RLY=200, ROY=338;
+// 2026-11-21 사용자: "러닝 차트를 더 길게 · 오라인을 더 확대하고 큰 원형의 바둑알 아이콘 스타일로 · 각각의 러닝
+// 레인간의 간격을 좀 더". 그림을 가로로 넓히고(760), 오라인 다섯을 큰 바둑알로, 갈래 사이를 벌렸습니다.
+// [키, 이름, LOS 를 지나는 x, 끝점 x, 끝점 y] (px) — 끝점은 이름표가 겹치지 않게 높낮이를 엇갈립니다.
+// 가운데(up the middle)는 센터 바둑알 위로, 가드·태클 방향은 바둑알 사이로 지납니다.
+const GAPS=[["LE","왼쪽 끝",150,66,128],["LT","왼쪽 태클",251,182,70],["LG","왼쪽 가드",337,292,116],
+  ["M","가운데",380,380,54],["RG","오른쪽 가드",423,468,116],["RT","오른쪽 태클",509,578,70],
+  ["RE","오른쪽 끝",610,694,128]];
+const RW=760, RH=450, RLY=262, ROY=404, OLX=[208,294,380,466,552];
+// 바둑알 — 둥근 돌에 위쪽 왼편 반사광 한 점.
+function stone(x,y,r){
+  return `<circle cx="${x}" cy="${y+3}" r="${r}" fill="rgba(0,0,0,.45)"/>
+    <circle cx="${x}" cy="${y}" r="${r}" fill="url(#pstn${GID})" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+    <ellipse cx="${f1(x-r*.32)}" cy="${f1(y-r*.36)}" rx="${f1(r*.34)}" ry="${f1(r*.2)}" fill="rgba(255,255,255,.22)"
+      transform="rotate(-28 ${f1(x-r*.32)} ${f1(y-r*.36)})"/>`;
+}
 function pnlGaps(){
-  const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r)), c=PS.P.c1||"#2b5fd9";
+  const L=PS.R.filter(r=>pnlIn(r)&&pnlOK(r));
   GID++;
-  let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${RW} ${RH}" role="img" aria-label="러닝 방향">${fieldDefs()}${
-    fieldBase(RW,RH,RLY,5*TS_)}`;
-  // 오라인 다섯 — 둥근 네모, 가운데가 센터.
-  [-4.6,-2.3,0,2.3,4.6].forEach(x=>o+=`<rect x="${f1(tpx(x)-11)}" y="${RLY+6}" width="22" height="15" rx="4"
-    fill="#1b2439" stroke="#33415f"/>`);
+  let o=`<svg class="pfld${PS.pin?" pinned":""}" viewBox="0 0 ${RW} ${RH}" role="img" aria-label="러닝 방향">${fieldDefs()}
+    <defs><radialGradient id="pstn${GID}" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#55627f"/>
+      <stop offset=".55" stop-color="#2a3349"/><stop offset="1" stop-color="#151b29"/></radialGradient></defs>${
+    fieldBase(RW,RH,RLY,72)}`;
   const by_={}; L.forEach(r=>{ const k=r.gap||""; (by_[k]=by_[k]||[]).push(r); });
   const mx=Math.max(1,...GAPS.map(([k])=>(by_[k]||[]).length));
-  if(!L.length) o+=`<text x="${RW/2}" y="${RLY*0.5}" font-size="15" fill="#7d8ca8" font-weight="700" text-anchor="middle">러닝 없음</text>`;
-  const ox=tpx(0);
-  GAPS.slice().sort((a,b)=>(by_[a[0]]||[]).length-(by_[b[0]]||[]).length).forEach(([k,lb,gx,ex,ey])=>{
+  if(!L.length) o+=`<text x="${RW/2}" y="${RLY*0.5}" font-size="16" fill="#7d8ca8" font-weight="700" text-anchor="middle">러닝 없음</text>`;
+  const ox=RW/2;
+  GAPS.slice().sort((a,b)=>(by_[a[0]]||[]).length-(by_[b[0]]||[]).length).forEach(([k,lb,lx,ex,ey])=>{
     const arr=by_[k]||[]; if(!arr.length) return;
-    const a=PAGG.rush(arr), lx=tpx(gx);
+    const a=PAGG.rush(arr);
     // 러너 → LOS(그 방향 구멍) → 끝점: 부드러운 곡선 두 마디.
-    const d=`M${f1(ox)},${ROY-16} C${f1(ox)},${f1(ROY-62)} ${f1(lx)},${f1(RLY+64)} ${f1(lx)},${RLY+2}`
-      +` C${f1(lx)},${f1(RLY-40)} ${f1(ex)},${f1(ey+46)} ${f1(ex)},${f1(ey)}`;
+    const d=`M${f1(ox)},${ROY-18} C${f1(ox)},${f1(ROY-70)} ${f1(lx)},${f1(RLY+78)} ${f1(lx)},${RLY+2}`
+      +` C${f1(lx)},${f1(RLY-52)} ${f1(ex)},${f1(ey+62)} ${f1(ex)},${f1(ey)}`;
     // 이름표 — 시도(굵게) · 시도당 야드
-    const [anc,dx]=k==="LE"?["start",-12]:k==="RE"?["end",12]:["middle",0];
+    const [anc,dx]=k==="LE"?["start",-14]:k==="RE"?["end",14]:["middle",0];
     o+=branch(k,[[lx,RLY+30],[ex,ey]],arr.length,mx,[`<tspan fill="#f1f4fa" font-weight="800">${arr.length}회</tspan>${
-      a.ypc==null?"":`<tspan fill="#9aa6bf" font-weight="700"> ${a.ypc.toFixed(1)}</tspan>`}`,anc,dx,-26],d,.3);
+      a.ypc==null?"":`<tspan fill="#9aa6bf" font-weight="700"> ${a.ypc.toFixed(1)}</tspan>`}`,anc,dx,-28],d,.3);
   });
+  // 오라인 다섯 — 갈래 위에 얹어, 갈래가 바둑알 사이로 빠져나가게 보입니다.
+  OLX.forEach(x=>o+=stone(x,RLY+30,24));
   o+=origin(ox,ROY,PS.P.num);
   const miss=(by_[""]||[]).length;
   return `<div class="pmapbox">${o}</svg><div class="ptip"></div>${pnlPinCard()}</div>`
